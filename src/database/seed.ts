@@ -16,11 +16,28 @@ class SeederInitializer {
     return readlineSync.keyInYNStrict(message);
   }
 
-  // Delete data from tables 
   private async dropAndSyncDatabase() {
-    // IMPORTANT: If you have relationships, ensure you delete in the proper order.
-    await this.prisma.user.deleteMany();
+    try {
+      // Check if there are any users in the database
+      const userCount = await this.prisma.user.count();
+      if (userCount > 0) {
+        console.log(`Found ${userCount} users. Proceeding with deletion...`);
+        // 1
+        await this.prisma.user_Role.deleteMany();
+
+        // 2
+        await this.prisma.user.deleteMany();
+
+        console.log('User data successfully deleted.');
+
+      } else {
+        console.log('No users found in the database. Skipping deletion.');
+      }
+    } catch (error) {
+      console.error('Error while dropping data from the database:', error);
+    }
   }
+
 
   // Seed data to table 
   private async seedData() {
