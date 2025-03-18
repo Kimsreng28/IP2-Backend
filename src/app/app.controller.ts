@@ -1,11 +1,9 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Get, Render } from '@nestjs/common';
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) { }
-// test
-  @Get()
-  getHello(): any {
-    return this.appService.getUsers();
-  }
+    @Get()
+    @Render('index')
+    root() {
+        return { title: 'Ele_Sale' };
+    }
 }
