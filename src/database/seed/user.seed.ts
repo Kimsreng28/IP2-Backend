@@ -6,13 +6,12 @@ export class UserSeed {
   public static seed = async () => {
     try {
       const result = await UserSeed.prisma.user.createMany({
-        data: [
-          { name: 'Alice', email: 'alice@example.com' },
-          { name: 'Bob', email: 'bob@example.com' },
-        ],
+        data: [],
       });
 
-      console.log(`Users seeded successfully. ${result.count} records created.`.green);
+      console.log(
+        `Users seeded successfully. ${result.count} records created.`.green,
+      );
     } catch (error) {
       console.error('🐞 Error seeding users:', error);
     } finally {

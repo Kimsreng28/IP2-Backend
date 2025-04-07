@@ -17,7 +17,7 @@ model Auth {
   id           String   @id @default(uuid())
   user_id      String
   user         User     @relation(fields: [user_id], references: [id])
-  token        String
+  token        String   @db.Text
   is_logged_in Boolean  @default(false)
   last_login   DateTime?
   created_at   DateTime @default(now())
@@ -28,7 +28,7 @@ model User {
   id           String     @id @default(uuid())
   first_name   String
   last_name    String
-  display_name String
+  display_name String?
   email        String     @unique
   password     String
   role         String     @default("customer")
@@ -36,6 +36,9 @@ model User {
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
   deleted_at   DateTime?
+
+  reset_code         String?
+  reset_code_expires DateTime?
   
   // Relations
   auths             Auth[]
@@ -61,6 +64,7 @@ model PasswordChange {
   user         User     @relation(fields: [user_id], references: [id])
   old_password String
   new_password String
+  confirm_password String
   changed_at   DateTime @default(now())
 }
 

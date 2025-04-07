@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import "colors";
+import 'colors';
 import * as readlineSync from 'readline-sync';
 import { UserSeed } from './seed/user.seed';
 
@@ -12,17 +12,18 @@ class SeederInitializer {
 
   // Check if data exists in one of the tables to confirm seeding
   private async confirmSeeding(): Promise<boolean> {
-    const message = 'This will drop and seed again. Are you sure you want to proceed?'.yellow;
+    const message =
+      'This will drop and seed again. Are you sure you want to proceed?'.yellow;
     return readlineSync.keyInYNStrict(message);
   }
 
-  // Delete data from tables 
+  // Delete data from tables
   private async dropAndSyncDatabase() {
     // IMPORTANT: If you have relationships, ensure you delete in the proper order.
     await this.prisma.user.deleteMany();
   }
 
-  // Seed data to table 
+  // Seed data to table
   private async seedData() {
     await UserSeed.seed();
   }
