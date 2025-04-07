@@ -219,15 +219,6 @@ export class AuthService {
       return { success: true };
     }
 
-    const currentTime = new Date();
-
-    // If the reset code exists but hasn't expired yet, prevent re-sending the code
-    if (user.reset_code_expires && user.reset_code_expires > currentTime) {
-      throw new BadRequestException(
-        'Reset code is still valid. Please check your email.',
-      );
-    }
-
     // Generate a new 6-digit code
     const resetCode = randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -242,7 +233,7 @@ export class AuthService {
 
     await this.sendResetCodeEmail(user.email, resetCode);
 
-    return { success: true };
+    return { success: true, message: 'Reset code resent successfully' };
   }
 
   async verifyResetCode(verifyResetDto: VerifyResetDto) {
@@ -263,61 +254,68 @@ export class AuthService {
   async completeReset(completeResetDto: CompleteResetDto) {
     const user = await this.prisma.user.findFirst({
       where: {
-        reset_code: completeResetDto.code,
-        reset_code_expires: { gt: new Date() }, // Ensure the code hasn't expired
+        reset_code: { not: null },
+        reset_code_expires: { gt: new Date() },
       },
+      orderBy: { reset_code_expires: 'desc' }, // get the latest one if multiple (edge case)
     });
 
     if (!user) {
-      throw new BadRequestException('Invalid or expired code');
+      throw new BadRequestException('No valid password reset session found');
     }
 
-    // Check if the new password and confirmed password match
     if (completeResetDto.newPassword !== completeResetDto.confirmedPassword) {
       throw new BadRequestException('Passwords do not match');
     }
 
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(
       completeResetDto.newPassword,
       this.SALT_ROUNDS,
     );
 
-    // Update the password and clear reset-related fields
     await this.prisma.$transaction([
       this.prisma.user.update({
         where: { id: user.id },
         data: {
           password: hashedPassword,
           reset_code: null,
-          reset_code_expires: null, // Clear reset code and expiration time
+          reset_code_expires: null,
         },
       }),
       this.prisma.passwordChange.create({
         data: {
           user_id: user.id,
-          old_password: user.password, // Storing old password for audit
+          old_password: user.password,
           new_password: hashedPassword,
         },
       }),
     ]);
 
-    return { success: true };
+    return { success: true, message: 'Password reset successfully' };
   }
 
   private async sendResetCodeEmail(email: string, code: string) {
     try {
-      await this.mailerService.sendMail({
+      console.log(`Attempting to send email to: ${email}`); // Debug log
+
+      const mailOptions = {
         to: email,
+        from: this.configService.get('MAIL_FROM'),
         subject: 'Your Password Reset Code',
-        template: 'reset-code',
-        context: {
-          code,
-          validity: '15 minutes',
-        },
-      });
+        text: `Your verification code is: ${code}`,
+        html: `<p>Your verification code is: <strong>${code}</strong></p>`,
+      };
+
+      // For testing purposes, log instead of sending in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('DEV MODE: Email content:', mailOptions);
+        return;
+      }
+
+      await this.mailerService.sendMail(mailOptions);
+      console.log('Email sent successfully');
     } catch (error) {
-      console.error('Failed to send email:', error);
+      console.error('Email sending error:', error);
       throw new InternalServerErrorException('Failed to send reset code');
     }
   }
