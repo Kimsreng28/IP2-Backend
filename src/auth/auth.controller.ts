@@ -3,15 +3,19 @@ import {
   Controller,
   Get,
   Post,
+  Req,
   Request,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password';
 import { CompleteResetDto } from './dto/reset-password.dto';
 import { SigninDto } from './dto/signin.dto';
 import { SignupDto } from './dto/signup.dto';
 import { VerifyResetDto } from './dto/verify-reset.dto';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -37,7 +41,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
-    return req.user; // Should contain userId and email from JwtStrategy
+    return req.user;
   }
 
   @Post('request-reset')
@@ -58,5 +62,56 @@ export class AuthController {
   @Post('complete-reset')
   async completeReset(@Body() dto: CompleteResetDto) {
     return this.authService.completeReset(dto);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard) // This triggers the Google login
+  async googleAuth() {}
+
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  async googleRedirect(@Req() req, @Res() res) {
+    try {
+      if (!req.user) {
+        throw new Error('No user data received from Google');
+      }
+
+      const { token, user } = await this.authService.handleGoogleLogin(
+        req.user,
+      );
+
+      res.cookie('access_token', token, {
+        maxAge: 2592000000, // 30 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+
+      res.cookie(
+        'user_cookie',
+        JSON.stringify({
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatar: user.avatar,
+        }),
+        {
+          maxAge: 2592000000, // 30 days
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        },
+      );
+
+      res.redirect(
+        `${process.env.FRONTEND_URL}/?avatar=${encodeURIComponent(user.avatar || '')}`,
+      );
+    } catch (error) {
+      console.error('Google redirect error:', error);
+      return res.status(500).json({
+        statusCode: 500,
+        message: error.message || 'Authentication failed',
+      });
+    }
   }
 }

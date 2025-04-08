@@ -287,6 +287,7 @@ export class AuthService {
           user_id: user.id,
           old_password: user.password,
           new_password: hashedPassword,
+          confirm_password: hashedPassword,
         },
       }),
     ]);
@@ -338,5 +339,55 @@ export class AuthService {
         status: true,
       },
     });
+  }
+  async handleGoogleLogin(googleUser: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    picture?: string;
+    provider: string;
+  }) {
+    // Check if user exists
+    let user = await this.prisma.user.findUnique({
+      where: { email: googleUser.email },
+    });
+
+    // Create user if doesn't exist
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: googleUser.email,
+          first_name: googleUser.firstName,
+          last_name: googleUser.lastName,
+          display_name: `${googleUser.firstName} ${googleUser.lastName}`,
+          avatar: googleUser.picture,
+          provider: googleUser.provider,
+          email_verified: true,
+          password: null,
+        },
+      });
+    } else if (!user.avatar && googleUser.picture) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { avatar: googleUser.picture },
+      });
+    }
+
+    // Generate JWT token
+    const token = this.generateJwtToken({
+      userId: user.id,
+      email: user.email,
+    });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        avatar: user.avatar,
+      },
+    };
   }
 }

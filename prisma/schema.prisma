@@ -30,12 +30,16 @@ model User {
   last_name    String
   display_name String?
   email        String     @unique
-  password     String
+  password     String?
   role         String     @default("customer")
   status       String     @default("active")
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
   deleted_at   DateTime?
+
+  avatar       String? 
+  provider     String?
+  email_verified Boolean? @default(false)
 
   reset_code         String?
   reset_code_expires DateTime?
