@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,92 +7,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Auth {
-  id           String   @id @default(uuid())
-  user_id      String
-  user         User     @relation(fields: [user_id], references: [id])
-  token        String   @db.Text
-  is_logged_in Boolean  @default(false)
-  last_login   DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-}
-
-model User {
-  id           String     @id @default(uuid())
-  first_name   String
-  last_name    String
-  display_name String?
-  email        String     @unique
-  password     String?
-  role         String     @default("customer")
-  status       String     @default("active")
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @updatedAt
-  deleted_at   DateTime?
-
-  avatar       String? 
-  provider     String?
-  email_verified Boolean? @default(false)
-
-  reset_code         String?
-  reset_code_expires DateTime?
-  
-  // Relations
-  auths             Auth[]
-  password_changes  PasswordChange[]
-  orders            Order[]
-  addresses         Address[]
-  wishlists         Wishlist[]
-  product_reviews   ProductReview[]
-  product_questions ProductQuestion[]
-  payments          Payment[]
-  credit_cards      CreditCard[]
-  contacts          Contact[]
-  notifications     Notification[]
-  admin             Admin?
-  vendor            Vendor?
-
-  Cart Cart[]
-}
-
-model PasswordChange {
-  id           String   @id @default(uuid())
-  user_id      String
-  user         User     @relation(fields: [user_id], references: [id])
-  old_password String
-  new_password String
-  confirm_password String
-  changed_at   DateTime @default(now())
-}
-
-model Order {
-  id              String     @id @default(uuid())
-  user_id         String
-  user            User       @relation(fields: [user_id], references: [id])
-  vendor_id       String?
-  vendor          Vendor?    @relation(fields: [vendor_id], references: [id])
-  order_date      DateTime
-  status          String
-  payment_status  String     @default("unpaid")
-  total_amount    Float
-  payment_method  String
-  shipping_address String
-  shipping_method_id String?
-  shipping_method ShippingMethod? @relation(fields: [shipping_method_id], references: [id])
-  created_at      DateTime   @default(now())
-  
-  // Relations
-  order_items        OrderItem[]
-  payments           Payment[]
-  order_status_history OrderStatusHistory[]
-  vendor_orders      VendorOrder[]
-}
-
 model Address {
-  id            String   @id @default(uuid())
+  id      Int     @id @default(autoincrement())
   user_id       String
-  user          User     @relation(fields: [user_id], references: [id])
   address_line1 String
   address_line2 String?
   city          String
@@ -107,293 +18,423 @@ model Address {
   country       String
   is_default    Boolean  @default(false)
   created_at    DateTime @default(now())
+  user          User[]
+
+  @@index([user_id], map: "Address_user_id_fkey")
 }
 
-model Wishlist {
-  id          String   @id @default(uuid())
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  created_at  DateTime @default(now())
-}
-
-model Product {
-  id              String     @id @default(uuid())
-  name            String
-  description     String?
-  price           Float
-  stock           Int        @default(0)
-  category_id     String
-  category        Category   @relation(fields: [category_id], references: [id])
-  brand_id        String
-  brand           Brand      @relation(fields: [brand_id], references: [id])
-  is_new_arrival  Boolean    @default(false)
-  is_best_seller  Boolean    @default(false)
-  created_at      DateTime   @default(now())
-  
-  // Relations
-  product_collections ProductCollection[]
-  product_reviews     ProductReview[]
-  product_questions   ProductQuestion[]
-  product_images      ProductImage[]
-  discounts           Discount[]
-  cart_items          Cart[]
-  order_items         OrderItem[]
-  vendor_products     VendorProduct[]
-
-  Wishlist Wishlist[]
-}
-
-model Collection {
-  id            String     @id @default(uuid())
-  name          String     @unique
+model Adminactivity {
+  id      Int     @id @default(autoincrement())
+  admin_id      String
+  activity_type String
   description   String?
-  created_at    DateTime   @default(now())
-  
-  // Relations
-  product_collections ProductCollection[]
+  created_at    DateTime @default(now())
+  admin         Admin[]
+
+  @@index([admin_id], map: "AdminActivity_admin_id_fkey")
 }
 
-model ProductCollection {
-  id             String     @id @default(uuid())
-  product_id     String
-  product        Product    @relation(fields: [product_id], references: [id])
-  collection_id  String
-  collection     Collection @relation(fields: [collection_id], references: [id])
-  created_at     DateTime   @default(now())
-}
+model Auth {
+  id      Int     @id @default(autoincrement())
+  user_id      String
+  token        String
+  is_logged_in Boolean   @default(false)
+  last_login   DateTime?
+  created_at   DateTime  @default(now())
+  updated_at   DateTime
+  user         User[]
 
-model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  
-  // Relations
-  products    Product[]
-  discounts   Discount[]
+  @@index([user_id], map: "Auth_user_id_fkey")
 }
 
 model Brand {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  
-  // Relations
-  products    Product[]
-  discounts   Discount[]
+  id      Int     @id @default(autoincrement())
+  name     String     @unique(map: "Brand_name_key")
+  discount Discount[]
+  product  Product[]
 }
 
-model ProductReview {
-  id          String   @id @default(uuid())
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  rating      Int
-  comment     String?
-  created_at  DateTime @default(now())
+model Cart {
+  id      Int     @id @default(autoincrement())
+  user_id            String
+  product_id         String
+  quantity           Int             @default(1)
+  shipping_method_id String?
+  product            Product[]
+  shippingmethod     Shippingmethod[]
+  user               User[]
+
+  @@index([product_id], map: "Cart_product_id_fkey")
+  @@index([shipping_method_id], map: "Cart_shipping_method_id_fkey")
+  @@index([user_id], map: "Cart_user_id_fkey")
 }
 
-model ProductQuestion {
-  id          String   @id @default(uuid())
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  question    String
-  answer      String?
-  created_at  DateTime @default(now())
+model Category {
+  id      Int     @id @default(autoincrement())
+  name     String     @unique(map: "Category_name_key")
+  discount Discount[]
+  product  Product[]
 }
 
-model ProductImage {
-  id          String   @id @default(uuid())
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  image_url   String
-  is_primary  Boolean  @default(false)
-  created_at  DateTime @default(now())
+model Collection {
+  id      Int     @id @default(autoincrement())
+  name              String              @unique(map: "Collection_name_key")
+  description       String?
+  created_at        DateTime            @default(now())
+  productcollection Productcollection[]
+}
+
+model Contact {
+  id      Int     @id @default(autoincrement())
+  user_id    String
+  message    String
+  status     String   @default("open")
+  created_at DateTime @default(now())
+  user       User[]
+
+  @@index([user_id], map: "Contact_user_id_fkey")
+}
+
+model Creditcard {
+  id      Int     @id @default(autoincrement())
+  user_id    String
+  card_last4 String
+  card_brand String
+  token      String
+  is_default Boolean   @default(false)
+  created_at DateTime  @default(now())
+  user       User[]
+  payment    Payment[]
+
+  @@index([user_id], map: "CreditCard_user_id_fkey")
 }
 
 model Discount {
-  id            String   @id @default(uuid())
+  id            String    @id
   product_id    String?
-  product       Product? @relation(fields: [product_id], references: [id])
   category_id   String?
-  category      Category? @relation(fields: [category_id], references: [id])
   brand_id      String?
-  brand         Brand?    @relation(fields: [brand_id], references: [id])
-  code          String   @unique
+  code          String    @unique(map: "Discount_code_key")
   discount_type String
   value         Float
   start_date    DateTime?
   end_date      DateTime?
-  created_at    DateTime @default(now())
+  created_at    DateTime  @default(now())
+  brand         Brand[]
+  category      Category[]
+  product       Product[]
+
+  @@index([brand_id], map: "Discount_brand_id_fkey")
+  @@index([category_id], map: "Discount_category_id_fkey")
+  @@index([product_id], map: "Discount_product_id_fkey")
 }
 
-model Cart {
-  id              String   @id @default(uuid())
-  user_id         String
-  user            User     @relation(fields: [user_id], references: [id])
-  product_id      String
-  product         Product  @relation(fields: [product_id], references: [id])
-  quantity        Int      @default(1)
+model Notification {
+  id      Int     @id @default(autoincrement())
+  user_id    String
+  message    String
+  is_read    Boolean  @default(false)
+  created_at DateTime @default(now())
+  user       User[]
+
+  @@index([user_id], map: "Notification_user_id_fkey")
+}
+
+model Order {
+  id      Int     @id @default(autoincrement())
+  user_id            String
+  vendor_id          String?
+  order_date         DateTime
+  status             String
+  payment_status     String               @default("unpaid")
+  total_amount       Float
+  payment_method     String
+  shipping_address   String
   shipping_method_id String?
-  shipping_method ShippingMethod? @relation(fields: [shipping_method_id], references: [id])
+  created_at         DateTime             @default(now())
+  shippingmethod     Shippingmethod[]
+  user               User[]
+  vendor             Vendor[]
+  orderitem          Orderitem[]
+  orderstatushistory Orderstatushistory[]
+  payment            Payment[]
+  vendororder        Vendororder[]
+
+  @@index([shipping_method_id], map: "Order_shipping_method_id_fkey")
+  @@index([user_id], map: "Order_user_id_fkey")
+  @@index([vendor_id], map: "Order_vendor_id_fkey")
 }
 
-model OrderItem {
-  id          String   @id @default(uuid())
-  order_id    String
-  order       Order    @relation(fields: [order_id], references: [id])
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  quantity    Int
-  price       Float
+model Orderitem {
+  id      Int     @id @default(autoincrement())
+  order_id   String
+  product_id String
+  quantity   Int
+  price      Float
+  order      Order[]
+  product    Product[]
+
+  @@index([order_id], map: "OrderItem_order_id_fkey")
+  @@index([product_id], map: "OrderItem_product_id_fkey")
+}
+
+model Orderstatushistory {
+  id      Int     @id @default(autoincrement())
+  order_id   String
+  status     String
+  changed_at DateTime @default(now())
+  order      Order[]
+
+  @@index([order_id], map: "OrderStatusHistory_order_id_fkey")
+}
+
+model Passwordchange {
+  id      Int     @id @default(autoincrement())
+  user_id      String
+  old_password String
+  new_password String
+  changed_at   DateTime @default(now())
+  user         User[]
+
+  @@index([user_id], map: "PasswordChange_user_id_fkey")
 }
 
 model Payment {
-  id              String   @id @default(uuid())
+  id      Int     @id @default(autoincrement())
   order_id        String
-  order           Order    @relation(fields: [order_id], references: [id])
   user_id         String
-  user            User     @relation(fields: [user_id], references: [id])
   credit_card_id  String?
-  credit_card     CreditCard? @relation(fields: [credit_card_id], references: [id])
   payment_method  String
   payment_gateway String
-  transaction_id  String?  @unique
-  status          String   @default("pending")
-  created_at      DateTime @default(now())
+  transaction_id  String?     @unique(map: "Payment_transaction_id_key")
+  status          String      @default("pending")
+  created_at      DateTime    @default(now())
+  creditcard      Creditcard[]
+  order           Order[]
+  user            User[]
+
+  @@index([credit_card_id], map: "Payment_credit_card_id_fkey")
+  @@index([order_id], map: "Payment_order_id_fkey")
+  @@index([user_id], map: "Payment_user_id_fkey")
 }
 
-model CreditCard {
-  id          String   @id @default(uuid())
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  card_last4  String
-  card_brand  String
-  token       String
-  is_default  Boolean  @default(false)
-  created_at  DateTime @default(now())
-  
-  // Relations
-  payments    Payment[]
+model Permission {
+  id      Int     @id @default(autoincrement())
+  role       String
+  can_view   Boolean  @default(false)
+  can_edit   Boolean  @default(false)
+  can_delete Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime
 }
 
-model ShippingMethod {
-  id            String   @id @default(uuid())
+model Product {
+  id      Int     @id @default(autoincrement())
+  name              String
+  description       String?
+  price             Float
+  stock             Int                 @default(0)
+  category_id       String
+  brand_id          String
+  is_new_arrival    Boolean             @default(false)
+  is_best_seller    Boolean             @default(false)
+  created_at        DateTime            @default(now())
+  cart              Cart[]
+  discount          Discount[]
+  orderitem         Orderitem[]
+  brand             Brand[]
+  category          Category[]
+  productcollection Productcollection[]
+  productimage      Productimage[]
+  productquestion   Productquestion[]
+  productreview     Productreview[]
+  vendorproduct     Vendorproduct[]
+  wishlist          Wishlist[]
+
+  @@index([brand_id], map: "Product_brand_id_fkey")
+  @@index([category_id], map: "Product_category_id_fkey")
+}
+
+model Productcollection {
+  id      Int     @id @default(autoincrement())
+  product_id    String
+  collection_id String
+  created_at    DateTime   @default(now())
+  collection    Collection[]
+  product       Product[]
+
+  @@index([collection_id], map: "ProductCollection_collection_id_fkey")
+  @@index([product_id], map: "ProductCollection_product_id_fkey")
+}
+
+model Productimage {
+  id      Int     @id @default(autoincrement())
+  product_id String
+  image_url  String
+  is_primary Boolean  @default(false)
+  created_at DateTime @default(now())
+  product    Product[]
+
+  @@index([product_id], map: "ProductImage_product_id_fkey")
+}
+
+model Productquestion {
+  id      Int     @id @default(autoincrement())
+  product_id String
+  user_id    String
+  question   String
+  answer     String?
+  created_at DateTime @default(now())
+  product    Product[]
+  user       User[]
+
+  @@index([product_id], map: "ProductQuestion_product_id_fkey")
+  @@index([user_id], map: "ProductQuestion_user_id_fkey")
+}
+
+model Productreview {
+  id      Int     @id @default(autoincrement())
+  product_id String
+  user_id    String
+  rating     Int
+  comment    String?
+  created_at DateTime @default(now())
+  product    Product[]
+  user       User[]
+
+  @@index([product_id], map: "ProductReview_product_id_fkey")
+  @@index([user_id], map: "ProductReview_user_id_fkey")
+}
+
+model Shippingmethod {
+  id      Int     @id @default(autoincrement())
   name          String
   cost          Float
   delivery_time String
   created_at    DateTime @default(now())
-  
-  // Relations
-  orders        Order[]
-  cart_items    Cart[]
+  cart          Cart[]
+  order         Order[]
 }
 
-model OrderStatusHistory {
-  id          String   @id @default(uuid())
-  order_id    String
-  order       Order    @relation(fields: [order_id], references: [id])
-  status      String
-  changed_at  DateTime @default(now())
-}
-
-model Contact {
-  id          String   @id @default(uuid())
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  message     String
-  status      String   @default("open")
+model Role {
+  id      Int     @id @default(autoincrement())
+  name        String
+  code        String   @unique
+  description String?
+  users       User[]
+  admins      Admin[]
+  vendors     Vendor[]
   created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 }
 
-model Notification {
-  id          String   @id @default(uuid())
-  user_id     String
-  user        User     @relation(fields: [user_id], references: [id])
-  message     String
-  is_read     Boolean  @default(false)
-  created_at  DateTime @default(now())
+model User {
+  id      Int     @id @default(autoincrement())
+  first_name      String
+  last_name       String
+  display_name    String
+  email           String            @unique
+  password        String
+  role_id         Int
+  status          String            @default("active")
+  created_at      DateTime          @default(now())
+  updated_at      DateTime
+  deleted_at      DateTime?
+  address         Address[]
+  admin           Admin[]
+  auth            Auth[]
+  cart            Cart[]
+  contact         Contact[]
+  creditcard      Creditcard[]
+  notification    Notification[]
+  order           Order[]
+  passwordchange  Passwordchange[]
+  payment         Payment[]
+  productquestion Productquestion[]
+  productreview   Productreview[]
+  role            Role[]
+  vendor          Vendor[]
+  wishlist        Wishlist[]
 }
 
 model Admin {
-  id          String   @id @default(uuid())
-  user_id     String @unique
-  user        User     @relation(fields: [user_id], references: [id])
-  role        String   @default("admin")
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  
-  // Relations
-  admin_activities AdminActivity[]
-}
-
-model Permission {
-  id          String   @id @default(uuid())
-  role        String
-  can_view    Boolean  @default(false)
-  can_edit    Boolean  @default(false)
-  can_delete  Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-}
-
-model AdminActivity {
-  id            String   @id @default(uuid())
-  admin_id      String
-  admin         Admin    @relation(fields: [admin_id], references: [id])
-  activity_type String
-  description   String?
-  created_at    DateTime @default(now())
+  id      Int     @id @default(autoincrement())
+  user_id       Int          @unique
+  role_id       String
+  created_at    DateTime        @default(now())
+  updated_at    DateTime
+  user          User[] 
+  role          Role[]
+  adminactivity Adminactivity[]
 }
 
 model Vendor {
-  id              String     @id @default(uuid())
-  user_id         String @unique
-  user            User       @relation(fields: [user_id], references: [id])
-  business_name   String
-  business_email  String     @unique
-  business_phone  String
-  status          String     @default("pending")
-  created_at      DateTime   @default(now())
-  updated_at      DateTime   @updatedAt
-  
-  // Relations
-  vendor_products VendorProduct[]
-  vendor_events   VendorEvent[]
-  vendor_orders   VendorOrder[]
-  orders          Order[]
+  id      Int     @id @default(autoincrement())
+  user_id        Int          @unique
+  role_id        String
+  business_name  String
+  business_email String          @unique
+  business_phone String
+  status         String          @default("pending")
+  created_at     DateTime        @default(now())
+  updated_at     DateTime
+  order          Order[]
+  user           User[]
+  role           Role[]
+  vendorevent    Vendorevent[]
+  vendororder    Vendororder[]
+  vendorproduct  Vendorproduct[]
 }
 
-model VendorProduct {
-  id          String   @id @default(uuid())
-  vendor_id   String
-  vendor      Vendor   @relation(fields: [vendor_id], references: [id])
-  product_id  String
-  product     Product  @relation(fields: [product_id], references: [id])
-  created_at  DateTime @default(now())
-}
 
-model VendorEvent {
-  id          String   @id @default(uuid())
-  vendor_id   String
-  vendor      Vendor   @relation(fields: [vendor_id], references: [id])
-  event_name  String
+model Vendorevent {
+  id      Int     @id @default(autoincrement())
+  vendor_id    String
+  event_name   String
   event_poster String?
-  start_date  DateTime
-  end_date    DateTime
-  created_at  DateTime @default(now())
+  start_date   DateTime
+  end_date     DateTime
+  created_at   DateTime @default(now())
+  vendor       Vendor[]
+
+  @@index([vendor_id], map: "VendorEvent_vendor_id_fkey")
 }
 
-model VendorOrder {
-  id            String   @id @default(uuid())
+model Vendororder {
+  id      Int     @id @default(autoincrement())
   vendor_id     String
-  vendor        Vendor   @relation(fields: [vendor_id], references: [id])
   order_id      String
-  order         Order    @relation(fields: [order_id], references: [id])
   status        String   @default("pending")
   vendor_amount Float
   created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  updated_at    DateTime
+  order         Order[]
+  vendor        Vendor[]
+
+  @@index([order_id], map: "VendorOrder_order_id_fkey")
+  @@index([vendor_id], map: "VendorOrder_vendor_id_fkey")
+}
+
+model Vendorproduct {
+  id      Int     @id @default(autoincrement())
+  vendor_id  String
+  product_id String
+  created_at DateTime @default(now())
+  product    Product[]
+  vendor     Vendor[]
+
+  @@index([product_id], map: "VendorProduct_product_id_fkey")
+  @@index([vendor_id], map: "VendorProduct_vendor_id_fkey")
+}
+
+model Wishlist {
+  id      Int     @id @default(autoincrement())
+  user_id    String
+  product_id String
+  created_at DateTime @default(now())
+  product    Product[]
+  user       User[]
+
+  @@index([product_id], map: "Wishlist_product_id_fkey")
+  @@index([user_id], map: "Wishlist_user_id_fkey")
 }
