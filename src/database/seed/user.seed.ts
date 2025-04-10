@@ -1,71 +1,78 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
+import { faker } from '@faker-js/faker';
 
-export class UserSeed {
+export class UserSeeder {
   private static prisma = new PrismaClient();
-  private static saltRounds = 10; // Define salt rounds for bcrypt
 
-  public static seed = async () => {
+  public static async seed() {
     try {
-      // Step 1: Seed sex
-      await UserSeed.prisma.sex.createMany({
-        data: [
-          { name: 'Male' },
-          { name: 'Female' },
-        ],
-        skipDuplicates: true, // Avoid errors if the records already exist
+      // Hash passwords using proper bcrypt import
+      const password = await bcrypt.hash('Password@123', 10);
+      
+      // Create users with different roles
+      const users = [
+        // Super Admin user
+        {
+          first_name: 'Admin',
+          last_name: 'User',
+          display_name: 'admin_user',
+          email: 'admin@example.com',
+          password,
+          role_id: 3,
+          status: 'active',
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Vendor user
+        {
+          first_name: 'Vendor',
+          last_name: 'Owner',
+          display_name: 'vendor_owner',
+          email: 'vendor@example.com',
+          password,
+          role_id: 2,
+          status: 'active',
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Customer user
+        {
+          first_name: 'John',
+          last_name: 'Doe',
+          display_name: 'john_doe',
+          email: 'customer@example.com',
+          password,
+          role_id: 1,
+          status: 'active',
+          created_at: new Date(),
+          updated_at: new Date()
+        },
+        // Additional test users
+        ...Array.from({ length: 7 }).map((_, i) => ({
+          first_name: faker.person.firstName(),
+          last_name: faker.person.lastName(),
+          display_name: faker.internet.userName(),
+          email: faker.internet.email(),
+          password,
+          role_id: 1,
+          status: faker.helpers.arrayElement(['active', 'inactive']),
+          created_at: new Date(),
+          updated_at: new Date()
+        }))
+      ];
+
+      await this.prisma.user.createMany({
+        data: users,
+        skipDuplicates: true
       });
 
-      // Step 2: Seed roles
-      await UserSeed.prisma.role.createMany({
-        data: [
-          { name: 'Client', slug: 'client' },
-          { name: 'Admin', slug: 'admin' },
-          { name: 'Vendor', slug: 'vendor' },
-        ],
-        skipDuplicates: true, // Avoid errors if the records already exist
-      });
-
-      // Step 4: Seed users with hashed passwords
-      await UserSeed.prisma.user.createMany({
-        data: [
-          {
-            name: 'Chan Suvannet',
-            avatar: 'avatar',
-            email: 'chansuvanet@gmail.com',
-            phone: '0889566929',
-            password: await hash('123456', UserSeed.saltRounds),
-            sex_id: 1,
-          },
-          {
-            name: 'Hai Kimsreng',
-            avatar: 'avatar',
-            email: 'haikimsreng@gmail.com',
-            phone: '0987654321',
-            password: await hash('123456', UserSeed.saltRounds),
-            sex_id: 2,
-          },
-        ],
-        skipDuplicates: true, // Avoid duplicate user creation
-      });
-
-      // Step 5: Seed user roles
-      await UserSeed.prisma.user_Role.createMany({
-        data: [
-          { user_id: 1, role_id: 1, creator_id: 1, is_default: true },
-          { user_id: 1, role_id: 3, creator_id: 1, is_default: false },
-          { user_id: 1, role_id: 2, creator_id: 1, is_default: false },
-          { user_id: 2, role_id: 1, creator_id: 1, is_default: true },
-        ],
-        skipDuplicates: true,
-      });
-
-      console.log(`✅ Users and roles seeded successfully.`);
-
+      console.log('✅ Users seeded successfully');
     } catch (error) {
-      console.error('🐞 Error seeding users:', error);
+      console.error('❌ Error seeding users:', error);
+      throw error;
     } finally {
-      await UserSeed.prisma.$disconnect();
+      await this.prisma.$disconnect();
     }
-  };
+  }
 }
