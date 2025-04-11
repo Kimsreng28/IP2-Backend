@@ -7,43 +7,49 @@ export class UserSeed {
 
   public static async seed() {
     try {
-      // Create admin user
-      const admin = await this.prisma.user.create({
-        data: {
-          first_name: 'Admin',
-          last_name: 'User',
-          email: 'admin@example.com',
+      // Create or update admin user
+      const admin = await this.prisma.user.upsert({
+        where: { email: 'kimsreng@gmail.com' },
+        update: {}, // No update logic needed here
+        create: {
+          first_name: 'KIM',
+          last_name: 'Sreng',
+          email: 'kimsreng@gmail.com',
           password: await hash('admin123', this.saltRounds),
           role: 'ADMIN',
           email_verified: true,
         },
       });
 
-      // Create vendor user
-      const vendor = await this.prisma.user.create({
-        data: {
-          first_name: 'Vendor',
-          last_name: 'User',
-          email: 'vendor@example.com',
+      // Create or update vendor user
+      const vendor = await this.prisma.user.upsert({
+        where: { email: 'net@gmail.com' },
+        update: {},
+        create: {
+          first_name: 'Suvan',
+          last_name: 'Net',
+          email: 'net@gmail.com',
           password: await hash('vendor123', this.saltRounds),
           role: 'VENDOR',
           email_verified: true,
         },
       });
 
-      // Create customer user
-      const customer = await this.prisma.user.create({
-        data: {
-          first_name: 'Customer',
-          last_name: 'User',
-          email: 'customer@example.com',
+      // Create or update customer user
+      const customer = await this.prisma.user.upsert({
+        where: { email: 'senghak@gmail.com' },
+        update: {},
+        create: {
+          first_name: 'Seng',
+          last_name: 'hak',
+          email: 'senghak@gmail.com',
           password: await hash('customer123', this.saltRounds),
           role: 'CUSTOMER',
           email_verified: true,
         },
       });
 
-      // Create corresponding role records
+      // Create role records (skip duplicates if they already exist)
       await this.prisma.user_Role.createMany({
         data: [
           { user_id: admin.id, role_id: 1, creator_id: 1, is_default: true },
@@ -53,22 +59,28 @@ export class UserSeed {
         skipDuplicates: true,
       });
 
-      // Create related records (Admin, Vendor, Customer)
-      await this.prisma.admin.create({
-        data: { user_id: admin.id, role: 'super_admin' },
+      // Create or ignore admin, vendor, customer extra records
+      await this.prisma.admin.upsert({
+        where: { user_id: admin.id },
+        update: {},
+        create: { user_id: admin.id, role: 'super_admin' },
       });
 
-      await this.prisma.vendor.create({
-        data: {
+      await this.prisma.vendor.upsert({
+        where: { user_id: vendor.id },
+        update: {},
+        create: {
           user_id: vendor.id,
-          business_name: 'Example Vendor',
-          business_email: 'vendor@example.com',
-          business_phone: '1234567890',
+          business_name: 'E-sale',
+          business_email: 'Esal.info@gamil.com',
+          business_phone: '123-456-7890',
         },
       });
 
-      await this.prisma.customer.create({
-        data: { user_id: customer.id, loyalty_points: 0 },
+      await this.prisma.customer.upsert({
+        where: { user_id: customer.id },
+        update: {},
+        create: { user_id: customer.id, loyalty_points: 0 },
       });
 
       console.log('✅ Users seeded successfully');
