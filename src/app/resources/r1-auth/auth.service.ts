@@ -77,6 +77,7 @@ export class AuthService {
           userId: user.id,
           email: user.email,
           avatar: user.avatar,
+          role: user.role,
         });
 
         await tx.auth.create({
@@ -121,6 +122,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       avatar: user.avatar,
+      role: user.role,
     });
 
     try {
@@ -395,6 +397,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       avatar: user.avatar,
+      role: user.role,
     });
 
     return {
