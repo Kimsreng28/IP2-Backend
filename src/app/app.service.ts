@@ -1,19 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service'; // Adjust the path as needed
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AppService {
   constructor(private prisma: PrismaService) {}
 
   async getUsers(): Promise<any> {
-    return await this.prisma.user.findMany({
-      include: {
-        roles: {
-          include: {
-            role: true,
-          },
-        },
-      },
-    });
+    // Fetch all users from the database
+    return await this.prisma.user.findMany();
   }
 }

@@ -8,13 +8,15 @@ import TokenPayload from 'src/app/shared/user.payload';
 
 // ================================================================>> Custom Library
 
-const UserDecorator = createParamDecorator(async (_data, context: ExecutionContext) => {
+const UserDecorator = createParamDecorator(
+  async (_data, context: ExecutionContext) => {
     const request = context.switchToHttp().getRequest();
     const token: string = request.headers?.authorization?.split('Bearer ')[1];
     const payload = jwt.verify(token, jwtConstants.secret) as TokenPayload;
     if (payload && payload.user) {
-        return payload.user;
+      return payload.user;
     }
     return null;
-})
+  },
+);
 export default UserDecorator;
