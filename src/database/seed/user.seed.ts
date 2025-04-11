@@ -14,6 +14,7 @@ export class UserSeed {
         create: {
           first_name: 'KIM',
           last_name: 'Sreng',
+          avatar: 'https://cdn-icons-png.flaticon.com/512/4794/4794939.png',
           email: 'kimsreng@gmail.com',
           password: await hash('admin123', this.saltRounds),
           role: 'ADMIN',
@@ -29,6 +30,7 @@ export class UserSeed {
           first_name: 'Suvan',
           last_name: 'Net',
           email: 'net@gmail.com',
+          avatar: 'https://cdn-icons-png.flaticon.com/512/4794/4794936.png',
           password: await hash('vendor123', this.saltRounds),
           role: 'VENDOR',
           email_verified: true,
