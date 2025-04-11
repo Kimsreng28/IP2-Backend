@@ -65,12 +65,18 @@ export class AuthService {
             first_name: true,
             last_name: true,
             display_name: true,
+            avatar: true,
+            role: true,
+            status: true,
+            created_at: true,
+            updated_at: true,
           },
         });
 
         const token = this.generateJwtToken({
           userId: user.id,
           email: user.email,
+          avatar: user.avatar,
         });
 
         await tx.auth.create({
@@ -82,7 +88,7 @@ export class AuthService {
           },
         });
 
-        return { user, token };
+        return { user, token, message: 'Registration successful' };
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -111,7 +117,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const token = this.generateJwtToken({ userId: user.id, email: user.email });
+    const token = this.generateJwtToken({
+      userId: user.id,
+      email: user.email,
+      avatar: user.avatar,
+    });
 
     try {
       // Invalidate old sessions and create new one in a transaction
@@ -129,6 +139,7 @@ export class AuthService {
           data: {
             user_id: user.id,
             token,
+
             is_logged_in: true,
             last_login: new Date(),
           },
@@ -136,12 +147,17 @@ export class AuthService {
       ]);
 
       return {
+        message: 'Login successful',
+        success: true,
         user: {
           id: user.id,
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
           display_name: user.display_name,
+          avatar: user.avatar,
+          role: user.role,
+          status: user.status,
         },
         token,
       };
@@ -207,7 +223,7 @@ export class AuthService {
 
     await this.sendResetCodeEmail(user.email, resetCode);
 
-    return { success: true };
+    return { success: true, message: 'Reset code sent successfully' };
   }
 
   async resendResetCode(requestResetDto: ForgotPasswordDto) {
@@ -249,7 +265,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired code');
     }
 
-    return { success: true };
+    return { success: true, message: 'Code is valid' };
   }
 
   async completeReset(completeResetDto: CompleteResetDto) {
@@ -378,6 +394,7 @@ export class AuthService {
     const token = this.generateJwtToken({
       userId: user.id,
       email: user.email,
+      avatar: user.avatar,
     });
 
     return {
@@ -388,6 +405,7 @@ export class AuthService {
         firstName: user.first_name,
         lastName: user.last_name,
         avatar: user.avatar,
+        role: user.role,
       },
     };
   }

@@ -21,7 +21,7 @@ class AppInitializer {
   }
 
   private configureMiddlewares() {
-    this.app.enableCors(); // Enables CORS with default settings
+    this.app.enableCors();
     this.app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
