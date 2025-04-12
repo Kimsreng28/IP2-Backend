@@ -94,6 +94,7 @@ export class AuthController {
           firstName: user.firstName,
           lastName: user.lastName,
           avatar: user.avatar,
+          role: user.role,
         }),
         {
           maxAge: 2592000000, // 30 days

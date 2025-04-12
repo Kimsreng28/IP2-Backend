@@ -363,7 +363,7 @@ export class AuthService {
     email: string;
     firstName: string;
     lastName: string;
-    picture?: string;
+    googleAvatar?: string;
     provider: string;
   }) {
     // Check if user exists
@@ -379,16 +379,16 @@ export class AuthService {
           first_name: googleUser.firstName,
           last_name: googleUser.lastName,
           display_name: `${googleUser.firstName} ${googleUser.lastName}`,
-          avatar: googleUser.picture,
+          avatar: googleUser.googleAvatar,
           provider: googleUser.provider,
           email_verified: true,
           password: null,
         },
       });
-    } else if (!user.avatar && googleUser.picture) {
+    } else if (!user.avatar && googleUser.googleAvatar) {
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { avatar: googleUser.picture },
+        data: { avatar: googleUser.googleAvatar },
       });
     }
 

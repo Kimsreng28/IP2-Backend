@@ -7,10 +7,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { RoleEnum } from '@prisma/client';
 
 // ================================================================>> Costom Library
 import * as jwt from 'jsonwebtoken';
-import { RoleEnum } from 'src/app/enums/role.enum';
+
 import jwtConstants from 'src/app/shared/jwt/constants';
 import TokenPayload from 'src/app/shared/user.payload';
 
@@ -37,7 +38,8 @@ export class RoleGuard implements CanActivate {
       const payload = jwt.verify(token, jwtConstants.secret) as TokenPayload;
       if (
         !roles.includes(
-          payload.user.roles.find((role) => role.is_default)?.id as RoleEnum,
+          payload.user.roles.find((role) => role.is_default)
+            ?.id as unknown as RoleEnum,
         )
       ) {
         throw new ForbiddenException('Access forbidden for this role.');
