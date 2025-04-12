@@ -6,13 +6,10 @@ import { ProfileService } from './service';
 
 @Controller()
 export class ProfileController {
+  constructor(private readonly _service: ProfileService) {}
 
-    constructor(
-        private readonly _service: ProfileService
-    ) { }
-
-    @Get()
-    getHello(): string {
-        return "Hello Profile!";
-    }
+  @Get()
+  getHello(): string {
+    return 'Hello Profile!';
+  }
 }

@@ -5,6 +5,4 @@ import { Injectable } from '@nestjs/common';
 
 // ===========================================================================>> Custom Library
 @Injectable()
-export class HomeService {
-
-}
+export class HomeService {}
