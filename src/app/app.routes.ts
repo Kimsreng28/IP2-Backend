@@ -17,20 +17,20 @@ export const appRoutes: Routes = [
       },
       {
         path: 'client',
-        children: clientRoutes
+        children: clientRoutes,
       },
       {
         path: 'admin',
-        children: adminRoutes
+        children: adminRoutes,
       },
       {
         path: 'vendor',
-        children: vendorRoutes
+        children: vendorRoutes,
       },
       {
         path: 'profile',
         module: ProfileModule,
-      }
+      },
     ],
   },
 ];

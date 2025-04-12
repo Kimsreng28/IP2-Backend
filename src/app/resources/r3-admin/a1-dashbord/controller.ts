@@ -6,13 +6,10 @@ import { DashboardService } from './service';
 
 @Controller()
 export class DashboardController {
+  constructor(private readonly _service: DashboardService) {}
 
-    constructor(
-        private readonly _service: DashboardService
-    ) { }
-
-    @Get()
-    getHello(): string {
-        return "Hello Admin!";
-    }
+  @Get()
+  getHello(): string {
+    return 'Hello Admin!';
+  }
 }
