@@ -11,7 +11,7 @@ export class HomeController {
         private readonly _service: HomeService
     ) { }
 
-    @Get()
+    @Get('banner')
     getHello(): string {
         return "Hello Home!";
     }
