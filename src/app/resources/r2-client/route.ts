@@ -6,7 +6,7 @@ import { HomeModule } from './a1-home/module';
 
 export const clientRoutes: Routes = [
   {
-    path: 'dashboard',
+    path: 'home',
     module: HomeModule,
   },
 ];

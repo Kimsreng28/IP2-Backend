@@ -8,7 +8,7 @@ import { HomeService } from './service';
 export class HomeController {
   constructor(private readonly _service: HomeService) {}
 
-  @Get()
+  @Get('banner')
   getHello(): string {
     return 'Hello Home!';
   }
