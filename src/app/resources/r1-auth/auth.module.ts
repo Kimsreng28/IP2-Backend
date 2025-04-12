@@ -32,4 +32,4 @@ import { AuthService } from './auth.service';
   providers: [AuthService, JwtStrategy, GoogleStrategy],
   exports: [JwtStrategy, PassportModule, MailModule],
 })
-export class AuthModule {}
+export class AuthModule { }

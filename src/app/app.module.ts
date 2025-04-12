@@ -8,7 +8,11 @@ import { appRoutes } from './app.routes';
 import { ExceptionErrorsFilter } from './core/exceptions/errors.filter';
 import { TimeoutInterceptor } from './core/interceptors/timeout.interceptor';
 import { AuthModule } from './resources/r1-auth/auth.module';
+import { ClientModule } from './resources/r2-client/module';
+import { AdminModule } from './resources/r3-admin/module';
+import { VendorModule } from './resources/r4-vendor/module';
 import { UserModule } from './user/user.module';
+import { ProfileModule } from './resources/r5-profile/module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { UserModule } from './user/user.module';
     PrismaModule,
     AuthModule,
     UserModule,
+    ClientModule,
+    AdminModule,
+    VendorModule,
+    ProfileModule,
     RouterModule.register(appRoutes),
   ],
   controllers: [AppController],
