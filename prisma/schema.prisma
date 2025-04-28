@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid())
+  sex_id            Int
+  avatar            String?
+  name              String
+  about             String?
+  tg_username       String?
+  email             String?
+  phone             String
+  password          String
+  is_active         Int       @default(1)
+  last_login        DateTime? @default(now())
+  is_phone_verified Boolean   @default(false)
+  is_email_verified Boolean   @default(false)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  sex   Sex         @relation(fields: [sex_id], references: [id])
+  roles User_Role[] @relation("UserRole_User")
+}
+
+model User_Role {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  role_id    Int
+  creator_id Int
+  created_at DateTime @default(now())
+  is_default Boolean  @default(false)
+
+  user User @relation("UserRole_User", fields: [user_id], references: [id])
+  role Role @relation(fields: [role_id], references: [id])
+}
+
+model Role {
+  id   Int    @id @default(autoincrement())
+  name String
+  slug String
+
+  userRoles User_Role[]
+}
+
+model Sex {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  users User[]
+}
