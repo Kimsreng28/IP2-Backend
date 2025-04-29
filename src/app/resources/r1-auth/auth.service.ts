@@ -168,7 +168,7 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string) {
+  async logout(userId: number) {
     try {
       const updated = await this.prisma.auth.updateMany({
         where: {
@@ -190,7 +190,7 @@ export class AuthService {
     }
   }
 
-  async checkActiveSession(userId: string, token: string): Promise<boolean> {
+  async checkActiveSession(userId: number, token: string): Promise<boolean> {
     const activeSession = await this.prisma.auth.findFirst({
       where: {
         user_id: userId,

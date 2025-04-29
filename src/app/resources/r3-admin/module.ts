@@ -15,7 +15,7 @@ import { DashboardModule } from './a1-dashbord/module';
 export class AdminModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {
         consumer
-            .apply(ClientMiddleware, DeviceTrackerMiddleware)
+            .apply(DeviceTrackerMiddleware)
             .forRoutes({ path: 'api/admin/*', method: RequestMethod.ALL });
     }
 }

@@ -5,13 +5,14 @@ export class RoleSeed {
 
   public static async seed() {
     try {
+      await this.clearAndReset();
+
       await this.prisma.role.createMany({
         data: [
           { name: 'Admin', slug: 'admin' },
           { name: 'Vendor', slug: 'vendor' },
           { name: 'Customer', slug: 'customer' },
         ],
-        skipDuplicates: true,
       });
 
       console.log('✅ Roles seeded successfully');
@@ -21,5 +22,11 @@ export class RoleSeed {
     } finally {
       await this.prisma.$disconnect();
     }
+  }
+
+  private static async clearAndReset() {
+    await this.prisma.user_Role.deleteMany();
+    await this.prisma.role.deleteMany();
+    await this.prisma.$executeRaw`ALTER TABLE Role AUTO_INCREMENT = 1;`;
   }
 }
