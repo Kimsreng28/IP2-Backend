@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Req,
   Request,
   Res,
@@ -16,6 +17,7 @@ import { ForgotPasswordDto } from './dto/forgot-password';
 import { CompleteResetDto } from './dto/reset-password.dto';
 import { SigninDto } from './dto/signin.dto';
 import { SignupDto } from './dto/signup.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyResetDto } from './dto/verify-reset.dto';
 
 @Controller('auth')
@@ -41,7 +43,16 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   getProfile(@Request() req) {
-    return req.user;
+    return this.authService.getUserProfile(req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('profile/update')
+  async updateProfile(
+    @Request() req,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(req.user.userId, updateProfileDto);
   }
 
   @Post('request-reset')
