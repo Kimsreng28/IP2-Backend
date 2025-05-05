@@ -55,6 +55,12 @@ export class AuthController {
     return this.authService.updateProfile(req.user.userId, updateProfileDto);
   }
 
+  @Post('update-avatar')
+  @UseGuards(JwtAuthGuard)
+  async updateAvatar(@Req() req, @Body() body: { avatar: string }) {
+    return this.authService.updateAvatar(req.user.userId, body.avatar);
+  }
+
   @Post('request-reset')
   async requestReset(@Body() dto: ForgotPasswordDto) {
     return this.authService.requestReset(dto);

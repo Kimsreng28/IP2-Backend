@@ -276,6 +276,43 @@ export class AuthService {
     }
   }
 
+  async updateAvatar(userId: string, avatarUrl: string) {
+    try {
+      // First get current avatar to delete it later
+      await this.prisma.user.findUnique({
+        where: { id: Number(userId) },
+        select: { avatar: true },
+      });
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: Number(userId) },
+        data: { avatar: avatarUrl },
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          display_name: true,
+          avatar: true,
+          role: true,
+          status: true,
+        },
+      });
+
+      // Optionally: Add logic here to delete the old avatar file
+      // You might want to call your Go service to delete the old file
+
+      return {
+        success: true,
+        message: 'Avatar updated successfully',
+        user: updatedUser,
+      };
+    } catch (error) {
+      console.error('Avatar update error:', error);
+      throw new InternalServerErrorException('Avatar update failed');
+    }
+  }
+
   async checkActiveSession(userId: number, token: string): Promise<boolean> {
     const activeSession = await this.prisma.auth.findFirst({
       where: {
