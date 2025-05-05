@@ -18,6 +18,7 @@ import { ForgotPasswordDto } from './dto/forgot-password';
 import { CompleteResetDto } from './dto/reset-password.dto';
 import { SigninDto } from './dto/signin.dto';
 import { SignupDto } from './dto/signup.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyResetDto } from './dto/verify-reset.dto';
 
 @Injectable()
@@ -168,7 +169,7 @@ export class AuthService {
     }
   }
 
-  async logout(userId: string) {
+  async logout(userId: number) {
     try {
       const updated = await this.prisma.auth.updateMany({
         where: {
@@ -190,7 +191,92 @@ export class AuthService {
     }
   }
 
-  async checkActiveSession(userId: string, token: string): Promise<boolean> {
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        display_name: true,
+        avatar: true,
+        role: true,
+        status: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const updateData: any = {
+      first_name: updateProfileDto.firstName,
+      last_name: updateProfileDto.lastName,
+      display_name: updateProfileDto.displayName,
+      email: updateProfileDto.email,
+      avatar: updateProfileDto.avatar,
+    };
+
+    // Handle password change if provided
+    if (updateProfileDto.newPassword && updateProfileDto.oldPassword) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(userId) },
+      });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const passwordValid = await bcrypt.compare(
+        updateProfileDto.oldPassword,
+        user.password,
+      );
+      if (!passwordValid) {
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+
+      updateData.password = await bcrypt.hash(
+        updateProfileDto.newPassword,
+        this.SALT_ROUNDS,
+      );
+    }
+
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id: Number(userId) },
+        data: updateData,
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          display_name: true,
+          avatar: true,
+          role: true,
+          status: true,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Profile updated successfully',
+        user: updatedUser,
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Email already in use');
+        }
+      }
+      throw new InternalServerErrorException('Profile update failed');
+    }
+  }
+
+  async checkActiveSession(userId: number, token: string): Promise<boolean> {
     const activeSession = await this.prisma.auth.findFirst({
       where: {
         user_id: userId,

@@ -7,11 +7,22 @@ export class UserSeed {
 
   public static async seed() {
     try {
-      // Create or update admin user
-      const admin = await this.prisma.user.upsert({
-        where: { email: 'kimsreng@gmail.com' },
-        update: {}, // No update logic needed here
-        create: {
+      // Clear existing data and reset auto-increments
+      await this.clearAndReset();
+
+      // Get roles
+      const roles = await this.prisma.role.findMany();
+      const adminRole = roles.find(r => r.slug === 'admin');
+      const vendorRole = roles.find(r => r.slug === 'vendor');
+      const customerRole = roles.find(r => r.slug === 'customer');
+
+      if (!adminRole || !vendorRole || !customerRole) {
+        throw new Error('Required roles not found in database');
+      }
+
+      // Create users
+      const admin = await this.prisma.user.create({
+        data: {
           first_name: 'KIM',
           last_name: 'Sreng',
           avatar: 'https://cdn-icons-png.flaticon.com/512/4794/4794939.png',
@@ -22,11 +33,8 @@ export class UserSeed {
         },
       });
 
-      // Create or update vendor user
-      const vendor = await this.prisma.user.upsert({
-        where: { email: 'net@gmail.com' },
-        update: {},
-        create: {
+      const vendor = await this.prisma.user.create({
+        data: {
           first_name: 'Suvan',
           last_name: 'Net',
           email: 'net@gmail.com',
@@ -37,11 +45,8 @@ export class UserSeed {
         },
       });
 
-      // Create or update customer user
-      const customer = await this.prisma.user.upsert({
-        where: { email: 'senghak@gmail.com' },
-        update: {},
-        create: {
+      const customer = await this.prisma.user.create({
+        data: {
           first_name: 'Seng',
           last_name: 'hak',
           email: 'senghak@gmail.com',
@@ -51,27 +56,22 @@ export class UserSeed {
         },
       });
 
-      // Create role records (skip duplicates if they already exist)
+      // Create role associations
       await this.prisma.user_Role.createMany({
         data: [
-          { user_id: admin.id, role_id: 1, creator_id: 1, is_default: true },
-          { user_id: vendor.id, role_id: 2, creator_id: 1, is_default: true },
-          { user_id: customer.id, role_id: 3, creator_id: 1, is_default: true },
+          { user_id: admin.id, role_id: adminRole.id, creator_id: admin.id, is_default: true },
+          { user_id: vendor.id, role_id: vendorRole.id, creator_id: admin.id, is_default: true },
+          { user_id: customer.id, role_id: customerRole.id, creator_id: admin.id, is_default: true },
         ],
-        skipDuplicates: true,
       });
 
-      // Create or ignore admin, vendor, customer extra records
-      await this.prisma.admin.upsert({
-        where: { user_id: admin.id },
-        update: {},
-        create: { user_id: admin.id, role: 'super_admin' },
+      // Create related records
+      await this.prisma.admin.create({
+        data: { user_id: admin.id, role: 'super_admin' },
       });
 
-      await this.prisma.vendor.upsert({
-        where: { user_id: vendor.id },
-        update: {},
-        create: {
+      await this.prisma.vendor.create({
+        data: {
           user_id: vendor.id,
           business_name: 'E-sale',
           business_email: 'Esal.info@gamil.com',
@@ -79,10 +79,8 @@ export class UserSeed {
         },
       });
 
-      await this.prisma.customer.upsert({
-        where: { user_id: customer.id },
-        update: {},
-        create: { user_id: customer.id, loyalty_points: 0 },
+      await this.prisma.customer.create({
+        data: { user_id: customer.id, loyalty_points: 0 },
       });
 
       console.log('✅ Users seeded successfully');
@@ -92,5 +90,21 @@ export class UserSeed {
     } finally {
       await this.prisma.$disconnect();
     }
+  }
+
+  private static async clearAndReset() {
+    // Delete in correct order to maintain referential integrity
+    await this.prisma.admin.deleteMany();
+    await this.prisma.vendor.deleteMany();
+    await this.prisma.customer.deleteMany();
+    await this.prisma.user_Role.deleteMany();
+    await this.prisma.user.deleteMany();
+    
+    // Reset auto-increments for MySQL
+    await this.prisma.$executeRaw`ALTER TABLE User AUTO_INCREMENT = 1;`;
+    await this.prisma.$executeRaw`ALTER TABLE Admin AUTO_INCREMENT = 1;`;
+    await this.prisma.$executeRaw`ALTER TABLE Vendor AUTO_INCREMENT = 1;`;
+    await this.prisma.$executeRaw`ALTER TABLE Customer AUTO_INCREMENT = 1;`;
+    await this.prisma.$executeRaw`ALTER TABLE user_Role AUTO_INCREMENT = 1;`;
   }
 }

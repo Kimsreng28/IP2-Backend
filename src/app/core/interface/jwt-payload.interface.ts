@@ -1,7 +1,7 @@
 import { RoleEnum } from '@prisma/client';
 
 export interface JwtPayload {
-  userId: string;
+  userId: number;
   email: string;
   avatar: string;
   role: RoleEnum;
