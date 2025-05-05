@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import 'colors';
 import * as readlineSync from 'readline-sync';
 import { UserSeed } from './seed/user.seed';
+import { ProductSeeder } from './seed/product.seed';
 
 class SeederInitializer {
   private prisma: PrismaClient;
@@ -27,6 +28,7 @@ class SeederInitializer {
   // Seed data to table
   private async seedData() {
     await UserSeed.seed();
+    await ProductSeeder.seed();
   }
 
   // Handle any seeding errors gracefully
