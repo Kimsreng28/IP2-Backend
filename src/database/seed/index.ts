@@ -1,9 +1,7 @@
-
 import { ProductSeeder } from './product.seed';
 
 import { BrandSeed } from './brand.seed';
 import { CategorySeed } from './category.seed';
-import { ProductSeed } from './product.seed';
 
 import { RoleSeed } from './role.seeder';
 import { UserSeed } from './user.seed';
@@ -18,9 +16,9 @@ async function main() {
     // Then seed users
     await UserSeed.seed();
     await CategorySeed.seed();
-    await BrandSeed.seed()
+    await BrandSeed.seed();
 
-    await ProductSeed.seed();
+    await ProductSeeder.seed();
 
     await ProductSeeder.seed();
 
