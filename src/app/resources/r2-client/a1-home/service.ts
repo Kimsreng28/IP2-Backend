@@ -7,20 +7,21 @@ import { FileService } from 'src/app/services/file.service';
 // ===========================================================================>> Custom Library
 @Injectable()
 export class HomeService {
+  constructor(private fileService: FileService) {}
 
-    constructor(private fileService: FileService) { };
-    
-    async create(body: any): Promise<any> {
-        const result = await this.fileService.uploadBase64Image('product', body.image);
-        if (result.error) {
-            throw new BadRequestException(result.error);
-        }
-        // Replace base64 string by file URI from FileService
-        body.image = result.file.uri;
-
-        
-        return {
-            message: 'Product has been created.'
-        };
+  async create(body: any): Promise<any> {
+    const result = await this.fileService.uploadBase64Image(
+      'product',
+      body.image,
+    );
+    if (result.error) {
+      throw new BadRequestException(result.error);
     }
+    // Replace base64 string by file URI from FileService
+    body.image = result.file.uri;
+
+    return {
+      message: 'Product has been created.',
+    };
+  }
 }

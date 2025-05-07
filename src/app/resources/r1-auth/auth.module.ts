@@ -4,8 +4,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { MailModule } from 'src/mail/mail.module';
 
+import { HttpModule } from '@nestjs/axios';
 import { GoogleStrategy } from 'src/app/core/stratagies/google.strategy';
 import { JwtStrategy } from 'src/app/core/stratagies/jwt.strategy';
+import { FileService } from 'src/app/services/file.service';
 import { UserModule } from 'src/app/user/user.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { AuthController } from './auth.controller';
@@ -15,6 +17,7 @@ import { AuthService } from './auth.service';
   imports: [
     MailModule,
     PrismaModule,
+    HttpModule,
     UserModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
@@ -29,7 +32,7 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, FileService],
   exports: [JwtStrategy, PassportModule, MailModule],
 })
-export class AuthModule { }
+export class AuthModule {}

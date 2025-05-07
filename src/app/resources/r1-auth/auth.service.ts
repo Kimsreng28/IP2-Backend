@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 
 import { JwtPayload } from 'src/app/core/interface/jwt-payload.interface';
+import { FileService } from 'src/app/services/file.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ForgotPasswordDto } from './dto/forgot-password';
 import { CompleteResetDto } from './dto/reset-password.dto';
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly mailerService: MailerService,
     private readonly jwtService: JwtService,
+    private readonly fileService: FileService,
   ) {}
 
   async signup(signupDto: SignupDto) {
@@ -274,6 +276,80 @@ export class AuthService {
       }
       throw new InternalServerErrorException('Profile update failed');
     }
+  }
+
+  async updateAvatar(userId: string, avatarUrl: string) {
+    try {
+      // First get current avatar to delete it later
+      await this.prisma.user.findUnique({
+        where: { id: Number(userId) },
+        select: { avatar: true },
+      });
+
+      const updatedUser = await this.prisma.user.update({
+        where: { id: Number(userId) },
+        data: { avatar: avatarUrl },
+        select: {
+          id: true,
+          email: true,
+          first_name: true,
+          last_name: true,
+          display_name: true,
+          avatar: true,
+          role: true,
+          status: true,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Avatar updated successfully',
+        user: updatedUser,
+      };
+    } catch (error) {
+      console.error('Avatar update error:', error);
+      throw new InternalServerErrorException('Avatar update failed');
+    }
+  }
+
+  async uploadAvatar(
+    userId: number,
+    file: Express.Multer.File,
+  ): Promise<{ avatar: string }> {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Invalid file upload');
+    }
+
+    // Call FileService to upload the avatar
+    const uploadResult = await this.fileService.uploadImage(file);
+
+    console.log('[AuthService] File service response:', uploadResult);
+
+    if (uploadResult.error) {
+      throw new InternalServerErrorException(uploadResult.error);
+    }
+
+    // Extract the correct path from the response
+    const filePath = uploadResult.file?.uri || uploadResult.path;
+    if (!filePath) {
+      throw new Error('No file path returned from file service');
+    }
+
+    // Remove '/public' prefix if present
+    const cleanPath = filePath.startsWith('/public/')
+      ? filePath.substring('/public/'.length)
+      : filePath;
+
+    // Update the avatar URL in the database
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar: cleanPath },
+      select: { id: true, avatar: true },
+    });
+
+    return {
+      avatar: updatedUser.avatar,
+    };
   }
 
   async checkActiveSession(userId: number, token: string): Promise<boolean> {
