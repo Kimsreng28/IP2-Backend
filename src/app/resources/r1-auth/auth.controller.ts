@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,9 +8,12 @@ import {
   Req,
   Request,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { GoogleAuthGuard } from 'src/app/core/guards/google-auth.guard';
 import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -53,6 +57,51 @@ export class AuthController {
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.authService.updateProfile(req.user.userId, updateProfileDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('profile/upload-avatar')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
+  async uploadAvatar(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    console.log('[UploadAvatar] User ID:', req.user?.userId);
+
+    if (!file) {
+      console.error('[UploadAvatar] No file received.');
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.buffer) {
+      console.error('[UploadAvatar] File buffer is empty:', file);
+      throw new BadRequestException('Invalid file upload');
+    }
+
+    console.log('[UploadAvatar] File received:', {
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+
+    try {
+      const result = await this.authService.uploadAvatar(
+        Number(req.user.userId),
+        file,
+      );
+      console.log('[UploadAvatar] Upload result:', result);
+      return result;
+    } catch (err) {
+      console.error(
+        '[UploadAvatar] Error uploading avatar:',
+        err.message || err,
+      );
+      throw err;
+    }
   }
 
   @Post('update-avatar')
