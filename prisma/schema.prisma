@@ -172,6 +172,7 @@ model Address {
   state                 String
   postal_code           String
   country               String
+  phone_number          String
   is_default            Boolean  @default(false)
   created_at            DateTime @default(now())
 
