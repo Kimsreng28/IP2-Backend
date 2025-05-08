@@ -205,6 +205,18 @@ export class AuthService {
         avatar: true,
         role: true,
         status: true,
+        addresses: {
+          select: {
+            id: true,
+            address_line1: true,
+            address_line2: true,
+            city: true,
+            state: true,
+            country: true,
+            postal_code: true,
+            is_default: true,
+          },
+        },
       },
     });
 
