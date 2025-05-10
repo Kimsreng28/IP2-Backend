@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsIn,
   IsOptional,
   IsString,
   Length,
@@ -47,4 +48,8 @@ export class UpdateAddressDto {
   @IsOptional()
   @IsBoolean()
   is_default?: boolean;
+
+  @IsOptional()
+  @IsIn(['billing', 'shipping'])
+  type?: 'billing' | 'shipping';
 }

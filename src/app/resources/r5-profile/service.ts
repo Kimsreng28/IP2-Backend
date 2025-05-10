@@ -50,6 +50,7 @@ export class ProfileService {
       return await this.prisma.address.create({
         data: {
           ...createAddressDto,
+          type: createAddressDto.type,
           user_id: userId,
         },
         include: {
@@ -88,6 +89,7 @@ export class ProfileService {
         where: { id: addressId },
         data: {
           ...updateDto,
+          type: updateDto.type,
           user_id: userId,
         },
       });
