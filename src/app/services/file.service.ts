@@ -111,4 +111,58 @@ export class FileService {
       };
     }
   }
+
+  // Upload image specifically for products
+  // Upload multiple product images
+  public async uploadMultipleProductImages(files: Express.Multer.File[]) {
+    const results = [];
+
+    for (const file of files) {
+      const form = new FormData();
+      form.append('file', file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+
+      const headers = {
+        ...form.getHeaders(),
+        ...this.getAuthHeaders(),
+      };
+
+      try {
+        // Send the POST request to upload the image
+        const response = await axios.post(
+          `${this.fileBaseUrl}/api/file/product/upload-image`, // Update this URL if necessary
+          form,
+          { headers },
+        );
+
+        // Handle the successful response and store metadata
+        const fileMetadata = response.data?.data ?? {};
+        results.push({
+          file: {
+            uri: fileMetadata.uri ?? `/uploads/products/${file.originalname}`,
+            path: fileMetadata.path ?? `/uploads/products/${file.originalname}`,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+          },
+        });
+      } catch (err) {
+        console.error(
+          '[FileService] Image upload failed:',
+          err.response?.data ?? err.message,
+        );
+
+        // Handle errors and push them to the result
+        results.push({
+          error: err.response?.data?.error ?? 'Image upload failed',
+          file: null,
+          path: null,
+        });
+      }
+    }
+
+    return results;
+  }
 }
