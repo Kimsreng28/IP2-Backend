@@ -1,6 +1,7 @@
 // src/profile/dto/create_address.dto.ts
 import {
   IsBoolean,
+  IsIn,
   IsOptional,
   IsString,
   Length,
@@ -42,4 +43,8 @@ export class CreateAddressDto {
   @IsOptional()
   @IsBoolean()
   is_default?: boolean;
+
+  @IsString()
+  @IsIn(['billing', 'shipping'])
+  type: 'billing' | 'shipping';
 }

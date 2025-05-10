@@ -175,6 +175,7 @@ model Address {
   phone_number          String
   is_default            Boolean  @default(false)
   created_at            DateTime @default(now())
+  type                  String   
 
   customer              Customer? @relation(fields: [user_id], references: [user_id], map: "Address_user_id_to_Customer")
 }
