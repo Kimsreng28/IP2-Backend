@@ -1,14 +1,15 @@
 // ===========================================================================>> Core Library
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
-import { ClientMiddleware } from 'src/app/core/middlewares/client.middleware';
 import { DeviceTrackerMiddleware } from 'src/app/core/middlewares/device_tracker.middleware';
 import { DashboardModule } from './a1-dashbord/module';
+import { PermissionAdminModule } from './a2-permission-manage-user/module';
 
 // ===========================================================================>> Custom Library
 
 @Module({
     imports: [
-        DashboardModule
+        DashboardModule,
+        PermissionAdminModule
     ]
 })
 

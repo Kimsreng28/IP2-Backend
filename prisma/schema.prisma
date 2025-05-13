@@ -24,7 +24,14 @@ enum StatusEnum {
   ACTIVE
   INACTIVE
 }
-
+model AdminActivity {
+  id                    Int      @id @default(autoincrement())
+  admin_id              Int
+  admin                 Admin    @relation(fields: [admin_id], references: [id])
+  activity_type         String
+  description           String?
+  created_at            DateTime @default(now())
+}
 model Auth {
   id                    Int         @id @default(autoincrement())
   uuid                  String      @default(uuid()) @unique
@@ -406,14 +413,7 @@ model Permission {
   updated_at            DateTime @updatedAt
 }
 
-model AdminActivity {
-  id                    Int      @id @default(autoincrement())
-  admin_id              Int
-  admin                 Admin    @relation(fields: [admin_id], references: [id])
-  activity_type         String
-  description           String?
-  created_at            DateTime @default(now())
-}
+
 
 model Vendor {
   id                    Int       @id @default(autoincrement())
