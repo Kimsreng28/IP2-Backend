@@ -340,6 +340,7 @@ model Payment {
   transaction_id        String?  @unique
   status                String   @default("pending")
   created_at            DateTime @default(now())
+  updated_at            DateTime    @updatedAt
 }
 
 model CreditCard {
