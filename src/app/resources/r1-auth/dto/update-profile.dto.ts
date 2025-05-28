@@ -27,5 +27,9 @@ export class UpdateProfileDto {
 
   @IsString()
   @IsOptional()
-  avatar?: string; // <-- Added avatar field
+  avatar?: string;
+
+  @IsString()
+  @IsOptional()
+  role?: string;
 }

@@ -34,7 +34,21 @@ export class AuthService {
     private readonly fileService: FileService,
   ) {}
 
+  private generateJwtToken(payload: JwtPayload): string {
+    const expiresIn = {
+      CUSTOMER: '7d', // Customers get longer sessions
+      ADMIN: '1d', // Admins get daily sessions
+      VENDOR: '2d',
+    }[payload.role];
+
+    return this.jwtService.sign(payload, {
+      expiresIn,
+      secret: process.env.JWT_SECRET,
+    });
+  }
+
   async signup(signupDto: SignupDto) {
+    const role = signupDto.role || 'CUSTOMER';
     // Check if email exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: signupDto.email },
@@ -61,6 +75,7 @@ export class AuthService {
               `${signupDto.firstName} ${signupDto.lastName}`,
             email: signupDto.email,
             password: hashedPassword,
+            role: role,
           },
           select: {
             id: true,
@@ -342,7 +357,7 @@ export class AuthService {
     }
 
     // Extract the correct path from the response
-    const filePath = uploadResult.file?.uri || uploadResult.path;
+    const filePath = uploadResult.file?.uri ?? uploadResult.path;
     if (!filePath) {
       throw new Error('No file path returned from file service');
     }
@@ -512,13 +527,6 @@ export class AuthService {
       console.error('Email sending error:', error);
       throw new InternalServerErrorException('Failed to send reset code');
     }
-  }
-
-  private generateJwtToken(payload: JwtPayload): string {
-    return this.jwtService.sign(payload, {
-      expiresIn: '1d', // Token expiration
-      secret: process.env.JWT_SECRET,
-    });
   }
 
   async validateUser(payload: JwtPayload) {
