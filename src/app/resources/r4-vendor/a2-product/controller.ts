@@ -10,6 +10,12 @@ export class ProductController {
 
     constructor(private _service: ProductService) { };
 
+    @Get("/setUp")
+    async setUpData(): Promise<{ message: string; brands: any[]; categories: any[] }> {
+        return this._service.setUpData();
+    }
+
+
     @Get()
     async getAllProducts(
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,

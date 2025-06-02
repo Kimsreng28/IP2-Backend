@@ -113,13 +113,12 @@ export class FileService {
   }
 
   // Upload image specifically for products
-  // Upload multiple product images
   public async uploadMultipleProductImages(files: Express.Multer.File[]) {
-    const results = [];
+    const results: Array<{ file?: { uri: string; path: string; originalname: string; mimetype: string; size: number }; error?: string }> = [];
 
     for (const file of files) {
       const form = new FormData();
-      form.append('file', file.buffer, {
+      form.append('product_images', file.buffer, {
         filename: file.originalname,
         contentType: file.mimetype,
       });
@@ -130,35 +129,36 @@ export class FileService {
       };
 
       try {
-        // Send the POST request to upload the image
+        // Send one POST-per-file
         const response = await axios.post(
-          `${this.fileBaseUrl}/api/file/product/upload-image`, // Update this URL if necessary
+          `${this.fileBaseUrl}/api/file/product/upload-image`,
           form,
           { headers },
         );
 
-        // Handle the successful response and store metadata
-        const fileMetadata = response.data?.data ?? {};
-        results.push({
-          file: {
-            uri: fileMetadata.uri ?? `/uploads/products/${file.originalname}`,
-            path: fileMetadata.path ?? `/uploads/products/${file.originalname}`,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            size: file.size,
-          },
-        });
+        // The Go backend returns { files: […] }
+        const returnedFiles = response.data?.files ?? [];
+
+        // It should normally be an array of length 1 (since you sent one file),
+        // but we still iterate in case it returns multiple.
+        for (const f of returnedFiles) {
+          results.push({
+            file: {
+              uri: f.uri,
+              path: f.uri,
+              originalname: f.originalname,
+              mimetype: f.mimetype,
+              size: f.size,
+            },
+          });
+        }
       } catch (err) {
         console.error(
           '[FileService] Image upload failed:',
           err.response?.data ?? err.message,
         );
-
-        // Handle errors and push them to the result
         results.push({
           error: err.response?.data?.error ?? 'Image upload failed',
-          file: null,
-          path: null,
         });
       }
     }

@@ -12,6 +12,17 @@ export class ProductService {
         this.prisma = new PrismaClient();
     }
 
+    async setUpData(): Promise<{ message: string; brands: any[]; categories: any[] }> {
+        const brands = await this.prisma.brand.findMany();
+        const categories = await this.prisma.category.findMany();
+
+        return {
+            message: 'Brands and Categories fetched successfully',
+            brands,
+            categories,
+        };
+    }
+
     async getAllProducts(
         page: number,
         limit: number,
@@ -56,6 +67,7 @@ export class ProductService {
                     },
                     where: whereCondition,
                     include: { brand: true, category: true, product_images: true },
+
                 }),
                 this.prisma.product.count({ where: whereCondition }),
             ]);
@@ -108,6 +120,7 @@ export class ProductService {
         const uploadImages = await this.fileService.uploadMultipleProductImages(files);
 
         const successfulUploads = uploadImages.filter(img => !img.error);
+
         if (successfulUploads.length === 0) throw new BadRequestException('All image uploads failed');
 
         const createdProduct = await this.prisma.product.create({
@@ -122,24 +135,6 @@ export class ProductService {
                 is_best_seller: body.is_best_seller ?? false,
             },
         });
-
-        // Create ProductImage records for each uploaded image
-        // Set first image as primary (is_primary: true)
-        // const productImages = await Promise.all(
-        //     uploadImages.map((image, index) => {
-        //         if (image.error) {
-
-        //             return null;
-        //         }
-        //         return this.prisma.productImage.create({
-        //             data: {
-        //                 product_id: createdProduct.id,
-        //                 image_url: image.file.uri, 
-        //                 is_primary: index === 0 
-        //             }
-        //         });
-        //     })
-        // ).then(images => images.filter(Boolean)); 
 
         await this.prisma.productImage.createMany({
             data: successfulUploads.map((image, index) => ({
@@ -162,6 +157,23 @@ export class ProductService {
 
         return { data, message: 'Product created successfully' };
     }
+            // Create ProductImage records for each uploaded image
+        // Set first image as primary (is_primary: true)
+        // const productImages = await Promise.all(
+        //     uploadImages.map((image, index) => {
+        //         if (image.error) {
+
+        //             return null;
+        //         }
+        //         return this.prisma.productImage.create({
+        //             data: {
+        //                 product_id: createdProduct.id,
+        //                 image_url: image.file.uri, 
+        //                 is_primary: index === 0 
+        //             }
+        //         });
+        //     })
+        // ).then(images => images.filter(Boolean)); 
 
     async update(
         body: UpdateProductDto,
