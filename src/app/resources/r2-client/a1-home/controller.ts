@@ -31,17 +31,13 @@ export class HomeController {
   }
 
   @Patch('favorites/:product_id')
-  async addFavorite(@Req() request: Request, @Param('product_id') productId: string) {
+  async addFavorite(@Req() request: Request, @Param('product_id') productId: number) {
     const userId = 1;
     if (!userId) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
-    const product_id = parseInt(productId, 10);
-    if (isNaN(product_id)) {
-      throw new HttpException('Invalid product ID', HttpStatus.BAD_REQUEST);
-    }
 
-    return await this._service.addFavorite(userId, product_id);
+    return await this._service.addFavorite(userId, productId);
   }
 
 }

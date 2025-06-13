@@ -69,24 +69,25 @@ model User {
   reset_code_expires DateTime?
 
   // Relations
-  refresh_tokens    RefreshToken[]
-  auths             Auth[]
-  password_changes  PasswordChange[]
-  orders            Order[]
-  addresses         Address[]
-  wishlists         Wishlist[]
-  product_reviews   ProductReview[]
-  product_questions ProductQuestion[]
-  payments          Payment[]
-  credit_cards      CreditCard[]
-  contacts          Contact[]
-  notifications     Notification[]
-  admin             Admin?
-  vendor            Vendor?
-  cart              Cart[]
-  user_roles        User_Role[]       @relation("UserRole_User")
-  customer          Customer?
- favorites             Favorite[]
+  refresh_tokens         RefreshToken[]
+  auths                  Auth[]
+  password_changes       PasswordChange[]
+  orders                 Order[]
+  addresses              Address[]
+  wishlists              Wishlist[]
+  product_reviews        ProductReview[]
+  product_questions      ProductQuestion[]
+  payments               Payment[]
+  credit_cards           CreditCard[]
+  contacts               Contact[]
+  notifications          Notification[]
+  admin                  Admin?
+  vendor                 Vendor?
+  cart                   Cart[]
+  user_roles             User_Role[]              @relation("UserRole_User")
+  customer               Customer?
+  favorites              Favorite[]
+  ProductQuestionComment ProductQuestionComment[]
 }
 
 model User_Role {
@@ -209,6 +210,7 @@ model Product {
   price          Float
   stock          Int      @default(0)
   category_id    Int
+  stars          Int      @default(3)
   category       Category @relation(fields: [category_id], references: [id])
   brand_id       Int
   brand          Brand    @relation(fields: [brand_id], references: [id])
@@ -229,12 +231,13 @@ model Product {
 }
 
 model Favorite {
-  id                    Int       @id @default(autoincrement())
-  user_id               Int
-  user                  User      @relation(fields: [user_id], references: [id])
-  product_id            Int
-  product               Product   @relation(fields: [product_id], references: [id])
-  created_at            DateTime  @default(now())
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  user       User     @relation(fields: [user_id], references: [id])
+  product_id Int
+  product    Product  @relation(fields: [product_id], references: [id])
+  created_at DateTime @default(now())
+
   @@unique([user_id, product_id])
 }
 
@@ -276,10 +279,12 @@ model ProductReview {
   id         Int      @id @default(autoincrement())
   product_id Int
   product    Product  @relation(fields: [product_id], references: [id])
-  user_id    Int
-  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int? // Optional user
+  user       User?    @relation(fields: [user_id], references: [id])
   rating     Int
   comment    String?
+  likes      Int      @default(0)
+  dislikes   Int      @default(0)
   created_at DateTime @default(now())
 }
 
@@ -287,11 +292,24 @@ model ProductQuestion {
   id         Int      @id @default(autoincrement())
   product_id Int
   product    Product  @relation(fields: [product_id], references: [id])
-  user_id    Int
-  user       User     @relation(fields: [user_id], references: [id])
+  user_id    Int?
+  user       User?    @relation(fields: [user_id], references: [id])
   question   String
   answer     String?
+  likes      Int      @default(0)
   created_at DateTime @default(now())
+
+  comments ProductQuestionComment[]
+}
+
+model ProductQuestionComment {
+  id          Int             @id @default(autoincrement())
+  question_id Int
+  question    ProductQuestion @relation(fields: [question_id], references: [id])
+  user_id     Int?
+  user        User?           @relation(fields: [user_id], references: [id])
+  comment     String
+  created_at  DateTime        @default(now())
 }
 
 model ProductImage {

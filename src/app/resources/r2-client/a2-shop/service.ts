@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
@@ -99,4 +99,184 @@ export class ShopService {
             throw new Error('Could not fetch filtered products');
         }
     }
+
+    async viewProduct(productId: number) {
+        try {
+            // Validate product exists
+            const product = await this.prisma.product.findUnique({
+                where: { id: productId },
+                include: {
+                    category: true,
+                    brand: true,
+                    product_images: true,
+                    discounts: true,
+                },
+            });
+            if (!product) {
+                throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+            }
+
+            return product
+        } catch (error) {
+
+        }
+    }
+    async viewRelativeProduct(productId: number, userId?: number) {
+        try {
+            // Step 1: Find the current product and its category
+            const product = await this.prisma.product.findUnique({
+                where: { id: productId },
+                include: {
+                    category: true,
+                    brand: true,
+                    product_images: true,
+                    discounts: true,
+                },
+            });
+
+            if (!product) {
+                throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+            }
+
+            // Step 2: Find other products in the same category (excluding this one)
+            const relatedProducts = await this.prisma.product.findMany({
+                where: {
+                    category_id: product.category_id,
+                    NOT: {
+                        id: productId,
+                    },
+                },
+                include: {
+                    category: true,
+                    brand: true,
+                    product_images: true,
+                    discounts: true,
+                },
+                take: 10, // or any limit you prefer
+            });
+
+            let productsWithFavorites = relatedProducts;
+
+            if (userId) {
+                const productIds = relatedProducts.map((product) => product.id);
+
+                const favoriteEntries = await this.prisma.favorite.findMany({
+                    where: {
+                        user_id: userId,
+                        product_id: { in: productIds },
+                    },
+                    select: { product_id: true },
+                });
+
+                const favoritedProductIds = new Set(
+                    favoriteEntries.map((entry) => entry.product_id)
+                );
+
+                productsWithFavorites = relatedProducts.map((product) => ({
+                    ...product,
+                    is_favorite: favoritedProductIds.has(product.id),
+                }));
+            }
+
+            return {
+                status: HttpStatus.OK,
+                data: productsWithFavorites,
+            };
+        } catch (error) {
+            console.error("Error in viewRelativeProduct:", error);
+            throw new HttpException('Failed to fetch related products', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    async getAllReviews(productId: number) {
+        return this.prisma.productReview.findMany({
+            where: { product_id: productId },
+            include: {
+                user: true,  // user can be null
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
+
+    // Create product review
+    async createProductReview(data: {
+        product_id: number;
+        rating: number;
+        comment?: string;
+        user_id?: number | null; // optional for anonymous
+    }) {
+        const product = await this.prisma.product.findUnique({ where: { id: data.product_id } });
+        if (!product) throw new BadRequestException('Product not found');
+
+        return this.prisma.productReview.create({
+            data: {
+                product_id: data.product_id,
+                user_id: data.user_id ?? null,
+                rating: data.rating,
+                comment: data.comment ?? null,
+            },
+        });
+    }
+
+    async toggleLike(reviewId: number, like: boolean = true) {
+        const review = await this.prisma.productReview.findUnique({
+            where: { id: reviewId },
+            select: { likes: true }, // explicitly fetch likes
+        });
+        if (!review) throw new Error("Review not found");
+
+        const updatedLikes = like ? review.likes + 1 : Math.max(review.likes + 1, 0);
+
+        return this.prisma.productReview.update({
+            where: { id: reviewId },
+            data: { likes: updatedLikes },
+        });
+    }
+
+    async toggleDislike(reviewId: number, dislike: boolean = true) {
+        const review = await this.prisma.productReview.findUnique({
+            where: { id: reviewId },
+            select: { dislikes: true }, // explicitly fetch dislikes
+        });
+        if (!review) throw new Error("Review not found");
+
+        const updatedDislikes = dislike ? review.dislikes + 1 : Math.max(review.dislikes - 1, 0);
+
+        return this.prisma.productReview.update({
+            where: { id: reviewId },
+            data: { dislikes: updatedDislikes },
+        });
+    }
+
+    
+    async getAllQuestions(productId: number) {
+        return this.prisma.productQuestion.findMany({
+            where: { product_id: productId },
+            include: {
+                user: true,  // user can be null
+                comments: true,  // user can be null
+            },
+            orderBy: { created_at: 'desc' },
+        });
+    }
+
+    // Create product question
+    async createProductQuestion(data: {
+        product_id: number;
+        question: string;
+        user_id?: number | null; // optional for anonymous
+    }) {
+        const product = await this.prisma.product.findUnique({ where: { id: data.product_id } });
+        if (!product) throw new BadRequestException('Product not found');
+
+        return this.prisma.productQuestion.create({
+            data: {
+                product_id: data.product_id,
+                user_id: data.user_id ?? null,
+                question: data.question,
+            },
+        });
+    }
+
+
 }
