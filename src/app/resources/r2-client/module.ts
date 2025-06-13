@@ -7,11 +7,12 @@ import {
 } from '@nestjs/common';
 import { DeviceTrackerMiddleware } from 'src/app/core/middlewares/device_tracker.middleware';
 import { HomeModule } from './a1-home/module';
+import { ShopModule } from './a2-shop/module';
 
 // ===========================================================================>> Custom Library
 
 @Module({
-  imports: [HomeModule],
+  imports: [HomeModule, ShopModule],
 })
 export class ClientModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
