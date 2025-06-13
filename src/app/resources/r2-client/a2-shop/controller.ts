@@ -8,10 +8,14 @@ import { ShopService } from './service';
 export class ShopController {
   constructor(private readonly _service: ShopService) { }
 
+  @Get('setup')
+  async getSetup() {
+    return this._service.getSetup();
+  }
+
   @Get('products')
   async getFilteredProducts(@Query() query) {
     return this._service.getFilteredProducts(query);
   }
-
 
 }

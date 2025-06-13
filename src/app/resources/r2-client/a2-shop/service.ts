@@ -6,8 +6,16 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ShopService {
     constructor(private prisma: PrismaService) { }
 
+    async getSetup() {
+        const category = await this.prisma.category.findMany()
+        return {
+            status: HttpStatus.OK,
+            data: category
+        }
+    }
+
     async getFilteredProducts(query: {
-        category?: number;     // This is categoryId
+        category?: number;
         priceRanges?: string;
         sortBy?: string;
         search?: string;
@@ -20,12 +28,11 @@ export class ShopService {
             const limit = Number(query.limit) || 20;
             const skip = (page - 1) * limit;
             const take = limit;
-            
-            const { category, priceRanges, sortBy = 'newest', search } = query;
-            
-            const categoryId = query.category ? Number(query.category) : undefined;
 
-            // Parse price ranges
+            const { category, priceRanges, sortBy = 'newest', search } = query;
+            const categoryId = category ? Number(category) : undefined;
+
+            // Parse price ranges (e.g., "500-800,1000-1500")
             const priceFilter = priceRanges?.split(',').map((range) => {
                 const [min, max] = range.split('-').map(Number);
                 return {
@@ -37,18 +44,14 @@ export class ShopService {
             });
 
             const where: Prisma.ProductWhereInput = {
-                ...(category && {
-                    category_id: categoryId, // filtering by ID
-                }),
+                ...(categoryId && { category_id: categoryId }),
                 ...(search && {
                     name: {
                         contains: search,
                         // mode: 'insensitive',
                     },
                 }),
-                ...(priceFilter?.length && {
-                    OR: priceFilter,
-                }),
+                ...(priceFilter?.length && { OR: priceFilter }),
             };
 
             const orderBy: Prisma.ProductOrderByWithRelationInput =
@@ -72,6 +75,17 @@ export class ShopService {
             });
 
             const total = await this.prisma.product.count({ where });
+
+            if (products.length === 0) {
+                return {
+                    status: HttpStatus.OK,
+                    message: 'No products found',
+                    data: [],
+                    total: 0,
+                    currentPage: page,
+                    totalPages: 0,
+                };
+            }
 
             return {
                 status: HttpStatus.OK,
