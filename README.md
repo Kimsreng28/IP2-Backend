@@ -19,6 +19,7 @@ $ npm run start:dev
 $ npm install prisma --save-dev
 $ npm run migrate
 $ npx prisma migrate dev --name init
+$ npx prisma db push --force-reset
 # seed
 $ npm run seeder
 # reset
