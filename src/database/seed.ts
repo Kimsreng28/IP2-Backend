@@ -4,6 +4,7 @@ import 'colors';
 import * as readlineSync from 'readline-sync';
 import { UserSeed } from './seed/user.seed';
 import { ProductSeeder } from './seed/product.seed';
+import { VendorRelatedSeeder } from './seed/vendorProduct';
 
 class SeederInitializer {
   private prisma: PrismaClient;
@@ -22,6 +23,8 @@ class SeederInitializer {
   // Delete data from tables
   private async dropAndSyncDatabase() {
     // IMPORTANT: If you have relationships, ensure you delete in the proper order.
+    await this.prisma.vendorOrder.deleteMany();
+    await this.prisma.order.deleteMany();
     await this.prisma.user.deleteMany();
   }
 
@@ -29,6 +32,7 @@ class SeederInitializer {
   private async seedData() {
     await UserSeed.seed();
     await ProductSeeder.seed();
+    await VendorRelatedSeeder.seed();
   }
 
   // Handle any seeding errors gracefully

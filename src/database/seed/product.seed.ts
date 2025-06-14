@@ -93,6 +93,34 @@ export class ProductSeeder {
             image_url: url,
           })),
         },
+        {
+          name: 'Ultra Sound',
+          description: 'comfortable',
+          price: 99.99,
+          stock: 100,
+          category_id: createdCategories[2].id,
+          brand_id: createdBrands[2].id,
+          is_new_arrival: false,
+          is_best_seller: true,
+          created_at: new Date(),
+          product_images: externalImageUrls.map((url) => ({
+            image_url: url,
+          })),
+        },
+        {
+          name: 'Table Lamp',
+          description: 'Stylish and modern table lamp',
+          price: 59.99,
+          stock: 100,
+          category_id: createdCategories[2].id,
+          brand_id: createdBrands[2].id,
+          is_new_arrival: false,
+          is_best_seller: true,
+          created_at: new Date(),
+          product_images: externalImageUrls.map((url) => ({
+            image_url: url,
+          })),
+        },
       ];
 
       // ─────────────────────────────────────────
