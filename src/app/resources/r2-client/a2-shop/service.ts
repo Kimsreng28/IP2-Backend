@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
 @Injectable()
 export class ShopService {
@@ -296,12 +297,17 @@ export class ShopService {
         return this.prisma.productQuestion.findMany({
             where: { product_id: productId },
             include: {
-                user: true,  // user can be null
-                comments: true,  // user can be null
+                user: true, // Include the user who asked the question
+                comments: {
+                    include: {
+                        user: true, // Include the user who wrote the comment
+                    },
+                },
             },
             orderBy: { created_at: 'desc' },
         });
     }
+
 
     // Create product question
     async createProductQuestion(data: {
@@ -319,6 +325,65 @@ export class ShopService {
                 question: data.question,
             },
         });
+    }
+
+    async likeQuestion(
+        productId: number,
+        questionId: number,
+        dto: LikeQuestionDto,
+    ) {
+        const question = await this.prisma.productQuestion.findFirst({
+            where: {
+                id: questionId,
+                product_id: productId,
+            },
+        });
+
+        if (!question) {
+            throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+        }
+
+        const updated = await this.prisma.productQuestion.update({
+            where: { id: questionId },
+            data: {
+                likes: {
+                    increment: dto.like ? 1 : -1,
+                },
+            },
+        });
+
+        return {
+            message: dto.like ? 'Liked question' : 'Unliked question',
+            data: {
+                id: updated.id,
+                likes: updated.likes,
+            },
+        };
+    }
+
+    async addComment(userId: number, questionId: number, dto: CreateQuestionCommentDto) {
+        // Optional: Validate that the question exists
+        const question = await this.prisma.productQuestion.findUnique({
+            where: { id: questionId },
+        });
+
+        if (!question) {
+            throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+        }
+
+        const comment = await this.prisma.productQuestionComment.create({
+            data: {
+                question_id: questionId,
+                user_id: userId,
+                comment: dto.comment,
+            },
+        });
+
+        return {
+            status: HttpStatus.CREATED,
+            message: 'Comment added successfully',
+            data: comment,
+        };
     }
 
 

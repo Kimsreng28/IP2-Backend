@@ -1,6 +1,7 @@
 // ===========================================================================>> Custom Library
-import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req } from '@nestjs/common';
 import { ShopService } from './service';
+import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
 // ===========================================================================>> Custom Library
 
@@ -69,7 +70,7 @@ export class ShopController {
     return this._service.toggleDislike(reviewId, body.dislike);
   }
 
-
+  // =========================================================================== Question
   @Get('product/:product_id/question')
   async viewAllReviewProduct(@Param('product_id') productId: number) {
     const userId = 1;
@@ -90,4 +91,26 @@ export class ShopController {
     });
 
   }
+
+  @Post('product/:product_id/question/:questionId/like')
+  async likeQuestion(
+    @Param('product_id', ParseIntPipe) productId: number,
+    @Param('questionId', ParseIntPipe) questionId: number,
+    @Body() dto: LikeQuestionDto,
+  ) {
+    return this._service.likeQuestion(productId, questionId, dto);
+  }
+
+  @Post('product/:product_id/question/:questionId/comments')
+  async addComment(
+    @Param('product_id', ParseIntPipe) productId: number,
+    @Param('questionId', ParseIntPipe) questionId: number,
+    @Body() dto: CreateQuestionCommentDto,
+    @Req() req: Request,
+  ) {
+    const userId = req['user']?.id ?? 1; // or anonymous
+    return this._service.addComment(userId, questionId, dto);
+  }
+
+
 }
