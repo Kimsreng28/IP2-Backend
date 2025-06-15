@@ -1,4 +1,3 @@
-// ================================================================>> Core Library
 import {
   CanActivate,
   ExecutionContext,
@@ -9,43 +8,34 @@ import {
 import { Reflector } from '@nestjs/core';
 import { RoleEnum } from '@prisma/client';
 
-// ================================================================>> Costom Library
-import * as jwt from 'jsonwebtoken';
-
-import jwtConstants from 'src/app/shared/jwt/constants';
-import TokenPayload from 'src/app/shared/user.payload';
-
 @Injectable()
 export class RoleGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext) {
-    // Get all roles form custom Roles Decorator
-    const roles = this.reflector.getAllAndOverride<RoleEnum[]>('roles', [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (roles && roles.length > 0) {
-      const request = context.switchToHttp().getRequest();
-      // Get token from headers
-      const authorizationHeader = request.headers?.authorization;
-      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-        throw new UnauthorizedException(
-          'Authorization token is missing or not in the correct format.',
-        );
-      }
-      const token: string = authorizationHeader.split('Bearer ')[1];
-      const payload = jwt.verify(token, jwtConstants.secret) as TokenPayload;
-      if (
-        !roles.includes(
-          payload.user.roles.find((role) => role.is_default)
-            ?.id as unknown as RoleEnum,
-        )
-      ) {
-        throw new ForbiddenException('Access forbidden for this role.');
-      }
-      return true; // Successful authentication and authorization
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(
+      'roles',
+      [context.getHandler(), context.getClass()],
+    );
+
+    // If no roles are required, allow access
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
     }
-    return false;
+
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+
+    if (!user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
+
+    if (!requiredRoles.includes(user.role)) {
+      throw new ForbiddenException(
+        `You don't have permission to access this resource`,
+      );
+    }
+
+    return true;
   }
 }

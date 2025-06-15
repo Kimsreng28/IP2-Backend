@@ -1,6 +1,5 @@
-// ================================================================>> Core Library
 import { SetMetadata } from '@nestjs/common';
-import { RoleEnum } from 'src/app/enums/role.enum';
+import { RoleEnum } from '@prisma/client';
 
-export const RolesDecorator = (...roles: RoleEnum[]) =>
-  SetMetadata('roles', roles);
+export const ROLES_KEY = 'roles';
+export const Roles = (...roles: RoleEnum[]) => SetMetadata(ROLES_KEY, roles);
