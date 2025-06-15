@@ -13,7 +13,6 @@ const UserDecorator = createParamDecorator(
     const request = context.switchToHttp().getRequest();
     const token: string = request.headers?.authorization?.split('Bearer ')[1];
     const payload = jwt.verify(token, jwtConstants.secret) as TokenPayload;
-
     return payload;
   },
 );

@@ -5,6 +5,12 @@ import { CategorySeed } from './category.seed';
 
 import { RoleSeed } from './role.seeder';
 import { UserSeed } from './user.seed';
+import { VendorProductSeed } from './vendorProduct.seed';
+import { OrderSeed } from './order.seed';
+import { OrderItemSeed } from './orderItem.seed';
+import { OrderStatusHistorySeed } from './orderStatusHistory.seed';
+import { VendorEventSeed } from './vendorEvent.seed';
+import { VendorOrderSeed } from './vendorOrder.seed';
 
 async function main() {
   console.log('🌱 Starting database seeding...');
@@ -20,7 +26,12 @@ async function main() {
 
     await ProductSeeder.seed();
 
-    await ProductSeeder.seed();
+    await VendorProductSeed.seed();
+    await OrderSeed.seed();
+    await OrderItemSeed.seed();
+    await OrderStatusHistorySeed.seed();
+    await VendorEventSeed.seed();
+    await VendorOrderSeed.seed();
 
     console.log('🎉 Database seeding completed successfully!');
   } catch (error) {

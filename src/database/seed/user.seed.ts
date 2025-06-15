@@ -99,11 +99,11 @@ export class UserSeed {
           // Admins
           { user_id: admin1.id, role_id: adminRole.id, creator_id: admin1.id, is_default: true },
           { user_id: admin2.id, role_id: adminRole.id, creator_id: admin1.id, is_default: true },
-          
+
           // Vendors
           { user_id: vendor1.id, role_id: vendorRole.id, creator_id: admin1.id, is_default: true },
           { user_id: vendor2.id, role_id: vendorRole.id, creator_id: admin1.id, is_default: true },
-          
+
           // Customers
           { user_id: customer1.id, role_id: customerRole.id, creator_id: admin1.id, is_default: true },
           { user_id: customer2.id, role_id: customerRole.id, creator_id: admin1.id, is_default: true },
@@ -152,13 +152,7 @@ export class UserSeed {
   }
 
   private static async clearAndReset() {
-    // Delete in correct order to maintain referential integrity
-    await this.prisma.admin.deleteMany();
-    await this.prisma.vendor.deleteMany();
-    await this.prisma.customer.deleteMany();
-    await this.prisma.user_Role.deleteMany();
-    await this.prisma.user.deleteMany();
-    
+
     // Reset auto-increments for MySQL
     await this.prisma.$executeRaw`ALTER TABLE User AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE Admin AUTO_INCREMENT = 1;`;

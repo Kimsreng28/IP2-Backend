@@ -2,6 +2,7 @@
 import { Routes } from '@nestjs/core';
 import { DashboardModule } from './a1-dashbord/module';
 import { ProductModule } from './a2-product/module';
+import { VendorEventModule } from './a3-event/module';
 
 // ===========================================================================>> Custom Library
 
@@ -14,4 +15,12 @@ export const vendorRoutes: Routes = [
     path: 'product',
     module: ProductModule,
   },
+  {
+    path: 'event',
+    module: VendorEventModule,
+  },
+  // {
+  //   path: 'orderhistory',
+  //   module: OrderHistoryModule,
+  // },
 ];
