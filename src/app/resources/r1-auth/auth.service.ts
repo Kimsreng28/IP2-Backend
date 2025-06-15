@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
+import { Prisma, RoleEnum } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 
@@ -48,7 +48,7 @@ export class AuthService {
   }
 
   async signup(signupDto: SignupDto) {
-    const role = signupDto.role || 'CUSTOMER';
+    const role = signupDto.role || RoleEnum.CUSTOMER;
     // Check if email exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email: signupDto.email },
