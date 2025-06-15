@@ -5,8 +5,6 @@ import { PassportModule } from '@nestjs/passport';
 import { MailModule } from 'src/mail/mail.module';
 
 import { HttpModule } from '@nestjs/axios';
-import { APP_GUARD } from '@nestjs/core';
-import { RoleGuard } from 'src/app/core/guards/role.guard';
 import { GoogleStrategy } from 'src/app/core/stratagies/google.strategy';
 import { JwtStrategy } from 'src/app/core/stratagies/jwt.strategy';
 import { FileService } from 'src/app/services/file.service';
@@ -34,16 +32,7 @@ import { AuthService } from './auth.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    GoogleStrategy,
-    FileService,
-    {
-      provide: APP_GUARD,
-      useClass: RoleGuard,
-    },
-  ],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, FileService],
   exports: [JwtStrategy, PassportModule, MailModule],
 })
 export class AuthModule {}
