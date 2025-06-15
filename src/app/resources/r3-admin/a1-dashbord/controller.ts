@@ -10,9 +10,9 @@ export class DashboardController {
 
   @Get()
   async getAll() {
-    return this. _service.getProducts();
+    console.log("hello")
+    // return this. _service.getProducts();
   }
-
   @Get(':id')
   async getOne(@Param('id') id: string) {
     return this. _service.getProduct(Number(id));

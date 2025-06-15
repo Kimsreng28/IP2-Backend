@@ -3,13 +3,15 @@ import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/c
 import { DeviceTrackerMiddleware } from 'src/app/core/middlewares/device_tracker.middleware';
 import { DashboardModule } from './a1-dashbord/module';
 import { PermissionAdminModule } from './a2-permission-manage-user/module';
+import { SettingAdminModule } from './a5-setting/module';
 
 // ===========================================================================>> Custom Library
 
 @Module({
     imports: [
         DashboardModule,
-        PermissionAdminModule
+        PermissionAdminModule,
+        SettingAdminModule
     ]
 })
 
