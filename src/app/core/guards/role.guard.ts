@@ -1,41 +1,33 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { RoleEnum } from '@prisma/client';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Injectable()
 export class RoleGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private jwtAuthGuard: JwtAuthGuard,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // First verify JWT
+    const canActivateJwt = await this.jwtAuthGuard.canActivate(context);
+    if (!canActivateJwt) {
+      return false;
+    }
+
+    // Then check roles
     const requiredRoles = this.reflector.getAllAndOverride<RoleEnum[]>(
       'roles',
       [context.getHandler(), context.getClass()],
     );
 
-    // If no roles are required, allow access
-    if (!requiredRoles || requiredRoles.length === 0) {
+    if (!requiredRoles) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
-    if (!user) {
-      throw new UnauthorizedException('User not authenticated');
-    }
-
-    if (!requiredRoles.includes(user.role)) {
-      throw new ForbiddenException(
-        `You don't have permission to access this resource`,
-      );
-    }
-
-    return true;
+    return requiredRoles.includes(request.user.role);
   }
 }

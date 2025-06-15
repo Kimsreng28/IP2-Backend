@@ -1,5 +1,16 @@
 // ===========================================================================>> Custom Library
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ShopService } from './service';
 import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
@@ -7,7 +18,7 @@ import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
 @Controller()
 export class ShopController {
-  constructor(private readonly _service: ShopService) { }
+  constructor(private readonly _service: ShopService) {}
 
   @Get('setup')
   async getSetup() {
@@ -23,20 +34,20 @@ export class ShopController {
   @Get('product/:product_id')
   async viewProduct(@Param('product_id') productId: number) {
     const userId = 1;
-    return await this._service.viewProduct(productId, userId)
+    return await this._service.viewProduct(productId, userId);
   }
 
   @Get('product/:product_id/relative')
   async viewRelativeProduct(@Param('product_id') productId: number) {
     const userId = 1;
-    return await this._service.viewRelativeProduct(productId, userId)
+    return await this._service.viewRelativeProduct(productId, userId);
   }
 
   //======================================================= Get Review
   @Get('product/:product_id/review')
   async getAllQuestionProduct(@Param('product_id') productId: number) {
     const userId = 1;
-    return await this._service.getAllReviews(productId)
+    return await this._service.getAllReviews(productId);
   }
 
   @Post('product/:product_id/review')
@@ -74,7 +85,7 @@ export class ShopController {
   @Get('product/:product_id/question')
   async viewAllReviewProduct(@Param('product_id') productId: number) {
     const userId = 1;
-    return await this._service.getAllQuestions(productId)
+    return await this._service.getAllQuestions(productId);
   }
 
   @Post('product/:product_id/question')
@@ -89,7 +100,6 @@ export class ShopController {
       question: body.question,
       user_id: userId,
     });
-
   }
 
   @Post('product/:product_id/question/:questionId/like')
@@ -112,5 +122,29 @@ export class ShopController {
     return this._service.addComment(userId, questionId, dto);
   }
 
+  // Add wishlist and cart functionality
+  @Post('product/:product_id/wishlist')
+  async toggleWishlist(
+    @Param('product_id') productId: number,
+    @Req() req: Request,
+  ) {
+    const userId = req['user']?.id;
+    if (!userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+    return this._service.toggleWishlist(userId, productId);
+  }
 
+  @Post('product/:product_id/cart')
+  async addToCart(
+    @Param('product_id') productId: number,
+    @Body() body: { quantity: number },
+    @Req() req: Request,
+  ) {
+    const userId = req['user']?.id;
+    if (!userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+    return this._service.addToCart(userId, productId, body.quantity);
+  }
 }
