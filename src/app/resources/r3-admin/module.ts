@@ -4,6 +4,7 @@ import { DeviceTrackerMiddleware } from 'src/app/core/middlewares/device_tracker
 import { DashboardModule } from './a1-dashbord/module';
 import { PermissionAdminModule } from './a2-permission-manage-user/module';
 import { SettingAdminModule } from './a5-setting/module';
+import { UserAdminModule } from './a3-user/module';
 
 // ===========================================================================>> Custom Library
 
@@ -11,7 +12,8 @@ import { SettingAdminModule } from './a5-setting/module';
     imports: [
         DashboardModule,
         PermissionAdminModule,
-        SettingAdminModule
+        SettingAdminModule,
+        UserAdminModule
     ]
 })
 

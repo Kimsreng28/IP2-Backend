@@ -1,5 +1,6 @@
 // ===========================================================================>> Core Library
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { RoleEnum } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 // ===========================================================================>> Custom Library
@@ -8,9 +9,21 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   // ===================================================>> Get All Products
+  async getData(){
+    const products = await this.getProducts()
+    const users = await this.getUsers()
+    const sales = 24
+
+    return{
+      products,
+      users,
+      sales
+    }
+  }
   async getProducts() {
     try {
-      const products = await this.prisma.product.findMany({
+      // Fetch products with related category and brand
+      const productsPromise = this.prisma.product.findMany({
         include: {
           category: true,
           brand: true,
@@ -20,182 +33,68 @@ export class DashboardService {
         },
       });
 
+      // Count total products
+      const countPromise = this.prisma.product.count();
+
+      // Await both promises concurrently
+      const [products, totalCount] = await Promise.all([productsPromise, countPromise]);
+
       return {
         data: products,
-        message: 'Products retrieved successfully',
+        totalCount, // total number of products
       };
     } catch (err) {
       throw new BadRequestException(`Could not fetch products: ${err.message}`);
     }
   }
 
-  // ===================================================>> Get Single Product
-  async getProduct(id: number) {
+
+  async getUsers() {
     try {
-      const product = await this.prisma.product.findUnique({
-        where: { id },
-        include: {
-          category: true,
-          brand: true,
+      // Fetch vendor users
+      const usersPromise = this.prisma.user.findMany({
+        where: { role: RoleEnum.VENDOR },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          role: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          avatar: true,
         },
       });
 
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
+      // Count total vendors
+      const countPromise = this.prisma.user.count({
+        where: { role: RoleEnum.VENDOR },
+      });
+
+      // Get last updated timestamp
+      const lastUpdatedPromise = this.prisma.user.aggregate({
+        _max: { updated_at: true },
+        where: { role: RoleEnum.VENDOR }, // Optional: limit to vendors only
+      });
+
+      // Await all promises in parallel
+      const [users, totalCount, lastUpdated] = await Promise.all([
+        usersPromise,
+        countPromise,
+        lastUpdatedPromise,
+      ]);
 
       return {
-        data: product,
-        message: 'Product retrieved successfully',
+        // data: users,
+        totalCount, // total number of vendor users
+        // lastUpdated: lastUpdated._max.updated_at,
       };
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not fetch product: ${err.message}`);
+      throw new BadRequestException(`Could not fetch users: ${err.message}`);
     }
   }
 
-  // ===================================================>> Create Product
-  async createProduct(data: {
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    category_id: number;
-    brand_id: number;
-    is_new_arrival?: boolean;
-    is_best_seller?: boolean;
-  }) {
-    try {
-      // Validate category exists
-      const category = await this.prisma.category.findUnique({
-        where: { id: data.category_id },
-      });
-      if (!category) {
-        throw new BadRequestException('Invalid category ID');
-      }
 
-      // Validate brand exists
-      const brand = await this.prisma.brand.findUnique({
-        where: { id: data.brand_id },
-      });
-      if (!brand) {
-        throw new BadRequestException('Invalid brand ID');
-      }
 
-      const product = await this.prisma.product.create({
-        data: {
-          ...data,
-          is_new_arrival: data.is_new_arrival || false,
-          is_best_seller: data.is_best_seller || false,
-          created_at: new Date(),
-        },
-        include: {
-          category: true,
-          brand: true,
-        },
-      });
-
-      return {
-        data: product,
-        message: 'Product created successfully',
-      };
-    } catch (err) {
-      throw new BadRequestException(`Could not create product: ${err.message}`);
-    }
-  }
-
-  // ===================================================>> Update Product
-  async updateProduct(
-    id: number,
-    data: {
-      name?: string;
-      description?: string;
-      price?: number;
-      stock?: number;
-      category_id?: number;
-      brand_id?: number;
-      is_new_arrival?: boolean;
-      is_best_seller?: boolean;
-    },
-  ) {
-    try {
-      // Check if product exists
-      const existingProduct = await this.prisma.product.findUnique({
-        where: { id },
-      });
-      if (!existingProduct) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      // Validate category if being updated
-      if (data.category_id) {
-        const category = await this.prisma.category.findUnique({
-          where: { id: data.category_id },
-        });
-        if (!category) {
-          throw new BadRequestException('Invalid category ID');
-        }
-      }
-
-      // Validate brand if being updated
-      if (data.brand_id) {
-        const brand = await this.prisma.brand.findUnique({
-          where: { id: data.brand_id },
-        });
-        if (!brand) {
-          throw new BadRequestException('Invalid brand ID');
-        }
-      }
-
-      const updatedProduct = await this.prisma.product.update({
-        where: { id },
-        data: {
-          ...data,
-          created_at: new Date(),
-        },
-        include: {
-          category: true,
-          brand: true,
-        },
-      });
-
-      return {
-        data: updatedProduct,
-        message: 'Product updated successfully',
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not update product: ${err.message}`);
-    }
-  }
-
-  // ===================================================>> Delete Product
-  async deleteProduct(id: number) {
-    try {
-      // Check if product exists
-      const product = await this.prisma.product.findUnique({
-        where: { id },
-      });
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      await this.prisma.product.delete({
-        where: { id },
-      });
-
-      return {
-        message: 'Product deleted successfully',
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not delete product: ${err.message}`);
-    }
-  }
 }
