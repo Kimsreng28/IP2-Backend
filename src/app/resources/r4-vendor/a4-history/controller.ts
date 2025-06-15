@@ -1,18 +1,24 @@
 // ===========================================================================>> Custom Library
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 
 // ===========================================================================>> Custom Library
-import { OrderHistoryService } from './service';
-import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
 import { RolesDecorator } from 'src/app/core/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
+import { OrderHistoryService } from './service';
 
+import { Order, RoleEnum } from '@prisma/client';
 import UserDecorator from 'src/app/core/decorators/user.decorator';
-import { RoleEnum } from 'src/app/enums/role.enum';
-import { Order, VendorProduct } from '@prisma/client';
 
 @Controller()
 export class OrderHistoryController {
-  constructor(private readonly _service: OrderHistoryService) { }
+  constructor(private readonly _service: OrderHistoryService) {}
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
@@ -21,7 +27,8 @@ export class OrderHistoryController {
     @UserDecorator() auth: any,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('sortByPrice', new DefaultValuePipe('asc')) sortByPrice: 'asc' | 'desc',
+    @Query('sortByPrice', new DefaultValuePipe('asc'))
+    sortByPrice: 'asc' | 'desc',
     @Query('keySearch') keySearch?: string,
   ): Promise<{
     ordersHistories: Order[];
@@ -29,7 +36,13 @@ export class OrderHistoryController {
     page: number;
     totalPages: number;
   }> {
-    return this._service.getOrdersHistories(auth.userId, page, limit, sortByPrice, keySearch);
+    return this._service.getOrdersHistories(
+      auth.userId,
+      page,
+      limit,
+      sortByPrice,
+      keySearch,
+    );
   }
 
   // @UseGuards(JwtAuthGuard)

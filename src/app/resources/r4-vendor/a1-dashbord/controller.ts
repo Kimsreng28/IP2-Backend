@@ -1,34 +1,36 @@
 // ===========================================================================>> Custom Library
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 
 // ===========================================================================>> Custom Library
-import { DashboardService } from './service';
-import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
 import { RolesDecorator } from 'src/app/core/decorators/roles.decorator';
+import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
+import { DashboardService } from './service';
 
+import { RoleEnum, VendorProduct } from '@prisma/client';
 import UserDecorator from 'src/app/core/decorators/user.decorator';
-import { RoleEnum } from 'src/app/enums/role.enum';
-import { VendorProduct } from '@prisma/client';
 
 @Controller()
 export class DashboardController {
-  constructor(private readonly _service: DashboardService) { }
+  constructor(private readonly _service: DashboardService) {}
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
-  @Get("/total")
-  async getTotal(
-    @UserDecorator() auth: any
-  ): Promise<{ message: string; totalVendor: number; totalProduct: number, totalSales: number }> {
+  @Get('/total')
+  async getTotal(@UserDecorator() auth: any): Promise<{
+    message: string;
+    totalVendor: number;
+    totalProduct: number;
+    totalSales: number;
+  }> {
     // console.log("auth", auth);
     return this._service.getTotal(auth.userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
-  @Get("/newProducts")
+  @Get('/newProducts')
   async getNewProducts(
-    @UserDecorator() auth: any
+    @UserDecorator() auth: any,
   ): Promise<{ message: string; newProducts: VendorProduct[] }> {
     // console.log("auth", auth);
     return this._service.getNewProducts(auth.userId);
@@ -40,11 +42,10 @@ export class DashboardController {
   // @Query('keySearch') keySearch?: string,
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
-  @Get("/recentOrders")
-  async getRecentOrder(
-    @UserDecorator() auth: any,
-  ): Promise<{
-    message: string; recentOrder: any
+  @Get('/recentOrders')
+  async getRecentOrder(@UserDecorator() auth: any): Promise<{
+    message: string;
+    recentOrder: any;
   }> {
     return this._service.getRecentOrder(auth.userId);
   }

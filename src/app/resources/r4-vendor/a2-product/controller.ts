@@ -1,7 +1,7 @@
 import { Body, Controller, DefaultValuePipe, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ProductService } from './service';
 import { Product } from '@prisma/client';
-import { RoleEnum } from 'src/app/enums/role.enum';
+import { RoleEnum } from '@prisma/client';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { RolesDecorator } from 'src/app/core/decorators/roles.decorator';
