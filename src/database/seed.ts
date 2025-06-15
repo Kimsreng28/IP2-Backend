@@ -4,7 +4,13 @@ import 'colors';
 import * as readlineSync from 'readline-sync';
 import { UserSeed } from './seed/user.seed';
 import { ProductSeeder } from './seed/product.seed';
-import { VendorRelatedSeeder } from './seed/vendorProduct';
+import { VendorProductSeed } from './seed/vendorProduct.seed';
+import { OrderSeed } from './seed/order.seed';
+import { OrderItemSeed } from './seed/orderItem.seed';
+import { OrderStatusHistorySeed } from './seed/orderStatusHistory.seed';
+import { VendorEventSeed } from './seed/vendorEvent.seed';
+import { VendorOrderSeed } from './seed/vendorOrder.seed';
+import { shippingMethodSeed } from './seed/shippingMethod.seed';
 
 class SeederInitializer {
   private prisma: PrismaClient;
@@ -23,8 +29,17 @@ class SeederInitializer {
   // Delete data from tables
   private async dropAndSyncDatabase() {
     // IMPORTANT: If you have relationships, ensure you delete in the proper order.
-    await this.prisma.vendorOrder.deleteMany();
-    await this.prisma.order.deleteMany();
+        // 1. Delete dependent records (in correct order)
+    await this.prisma.shippingMethod.deleteMany();
+    await this.prisma.orderStatusHistory.deleteMany();
+    await this.prisma.orderItem.deleteMany();
+    await this.prisma.payment.deleteMany();
+    // 2. Delete role associations and subtypes
+    await this.prisma.admin.deleteMany();
+    await this.prisma.vendor.deleteMany();
+    await this.prisma.customer.deleteMany();
+    await this.prisma.user_Role.deleteMany();
+    // 3. Now it's safe to delete users
     await this.prisma.user.deleteMany();
   }
 
@@ -32,7 +47,14 @@ class SeederInitializer {
   private async seedData() {
     await UserSeed.seed();
     await ProductSeeder.seed();
-    await VendorRelatedSeeder.seed();
+    // await VendorSeed.seed();
+    await VendorProductSeed.seed();
+    await shippingMethodSeed.seed();
+    await OrderSeed.seed();
+    await OrderItemSeed.seed();
+    await OrderStatusHistorySeed.seed();
+    await VendorEventSeed.seed();
+    await VendorOrderSeed.seed();
   }
 
   // Handle any seeding errors gracefully

@@ -24,15 +24,6 @@ export class ProductController {
         return this._service.setUpData(auth.userId);
     }
 
-    // @Get("/setUp")
-
-    // @RolesDecorator(RoleEnum.VENDOR)
-    // async setUpData(
-    //     @UserDecorator() requestingUser: any,
-    // ): Promise<{ message: string; brands: any[]; categories: any[] }> {
-    //     return this._service.setUpData(requestingUser);
-    // }
-
     @UseGuards(JwtAuthGuard)
     @RolesDecorator(RoleEnum.VENDOR)
     @Get()
