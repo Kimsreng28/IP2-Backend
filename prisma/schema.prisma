@@ -297,7 +297,6 @@ model ProductQuestion {
   answer     String?
   likes      Int      @default(0)
   created_at DateTime @default(now())
-
   comments ProductQuestionComment[]
 }
 
