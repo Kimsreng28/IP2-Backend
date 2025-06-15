@@ -15,12 +15,14 @@ export class ShopController {
 
   @Get('products')
   async getFilteredProducts(@Query() query) {
-    return this._service.getFilteredProducts(query);
+    const userId = 1;
+    return this._service.getFilteredProducts(query, userId);
   }
 
   @Get('product/:product_id')
   async viewProduct(@Param('product_id') productId: number) {
-    return await this._service.viewProduct(productId)
+    const userId = 1;
+    return await this._service.viewProduct(productId, userId)
   }
 
   @Get('product/:product_id/relative')
@@ -67,7 +69,7 @@ export class ShopController {
     return this._service.toggleDislike(reviewId, body.dislike);
   }
 
-  
+
   @Get('product/:product_id/question')
   async viewAllReviewProduct(@Param('product_id') productId: number) {
     const userId = 1;

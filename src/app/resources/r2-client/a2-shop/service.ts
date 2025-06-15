@@ -21,7 +21,7 @@ export class ShopService {
         search?: string;
         page?: number | string;
         limit?: number | string;
-    }) {
+    }, userId: number) {
         try {
             // Parse pagination values safely
             const page = Number(query.page) || 1;
@@ -87,9 +87,32 @@ export class ShopService {
                 };
             }
 
+            let productsWithFavorites = products;
+
+            if (userId) {
+                const productIds = products.map((product) => product.id);
+
+                const favoriteEntries = await this.prisma.wishlist.findMany({
+                    where: {
+                        user_id: userId,
+                        product_id: { in: productIds },
+                    },
+                    select: { product_id: true },
+                });
+
+                const favoritedProductIds = new Set(
+                    favoriteEntries.map((entry) => entry.product_id)
+                );
+
+                productsWithFavorites = products.map((product) => ({
+                    ...product,
+                    is_favorite: favoritedProductIds.has(product.id),
+                }));
+            }
+
             return {
                 status: HttpStatus.OK,
-                data: products,
+                data: productsWithFavorites,
                 total,
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),
@@ -100,9 +123,9 @@ export class ShopService {
         }
     }
 
-    async viewProduct(productId: number) {
+    async viewProduct(productId: number, userId?: number) {
         try {
-            // Validate product exists
+            // 1. Get product with related info
             const product = await this.prisma.product.findUnique({
                 where: { id: productId },
                 include: {
@@ -112,15 +135,35 @@ export class ShopService {
                     discounts: true,
                 },
             });
+
             if (!product) {
                 throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
             }
 
-            return product
-        } catch (error) {
+            // 2. Check if user has this product in wishlist
+            let is_favorite = false;
+            if (userId) {
+                const favorite = await this.prisma.wishlist.findFirst({
+                    where: {
+                        user_id: userId,
+                        product_id: productId,
+                    },
+                });
+                is_favorite = !!favorite;
+            }
 
+            // 3. Return enriched product
+            return {
+                ...product,
+                is_favorite,
+            };
+
+        } catch (error) {
+            console.error('Error in viewProduct:', error);
+            throw new HttpException('Could not load product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     async viewRelativeProduct(productId: number, userId?: number) {
         try {
             // Step 1: Find the current product and its category
@@ -160,7 +203,7 @@ export class ShopService {
             if (userId) {
                 const productIds = relatedProducts.map((product) => product.id);
 
-                const favoriteEntries = await this.prisma.favorite.findMany({
+                const favoriteEntries = await this.prisma.wishlist.findMany({
                     where: {
                         user_id: userId,
                         product_id: { in: productIds },
@@ -248,7 +291,7 @@ export class ShopService {
         });
     }
 
-    
+
     async getAllQuestions(productId: number) {
         return this.prisma.productQuestion.findMany({
             where: { product_id: productId },
