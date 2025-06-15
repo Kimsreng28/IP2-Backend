@@ -123,7 +123,6 @@ model Customer {
 
   orders    Order[]
   addresses Address[]
-  wishlists Wishlist[]
 }
 
 model RefreshToken {
@@ -199,7 +198,7 @@ model Wishlist {
   product    Product  @relation(fields: [product_id], references: [id])
   created_at DateTime @default(now())
 
-  customer Customer? @relation(fields: [user_id], references: [user_id], map: "Wishlist_user_id_to_Customer")
+  @@unique([user_id, product_id])
 }
 
 model Product {

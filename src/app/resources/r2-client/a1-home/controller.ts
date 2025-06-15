@@ -30,14 +30,14 @@ export class HomeController {
     return await this._service.getProductBestSellers(userId)
   }
 
-  @Patch('favorites/:product_id')
-  async addFavorite(@Req() request: Request, @Param('product_id') productId: number) {
+  @Patch('wishlists/:product_id')
+  async addWishlist(@Req() request: Request, @Param('product_id') productId: number) {
     const userId = 1;
     if (!userId) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    return await this._service.addFavorite(userId, productId);
+    return await this._service.addWishlist(userId, productId);
   }
 
 }
