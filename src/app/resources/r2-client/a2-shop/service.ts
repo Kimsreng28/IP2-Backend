@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
 @Injectable()
 export class ShopService {
@@ -21,7 +22,7 @@ export class ShopService {
         search?: string;
         page?: number | string;
         limit?: number | string;
-    }) {
+    }, userId: number) {
         try {
             // Parse pagination values safely
             const page = Number(query.page) || 1;
@@ -87,9 +88,32 @@ export class ShopService {
                 };
             }
 
+            let productsWithFavorites = products;
+
+            if (userId) {
+                const productIds = products.map((product) => product.id);
+
+                const favoriteEntries = await this.prisma.wishlist.findMany({
+                    where: {
+                        user_id: userId,
+                        product_id: { in: productIds },
+                    },
+                    select: { product_id: true },
+                });
+
+                const favoritedProductIds = new Set(
+                    favoriteEntries.map((entry) => entry.product_id)
+                );
+
+                productsWithFavorites = products.map((product) => ({
+                    ...product,
+                    is_favorite: favoritedProductIds.has(product.id),
+                }));
+            }
+
             return {
                 status: HttpStatus.OK,
-                data: products,
+                data: productsWithFavorites,
                 total,
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),
@@ -100,9 +124,9 @@ export class ShopService {
         }
     }
 
-    async viewProduct(productId: number) {
+    async viewProduct(productId: number, userId?: number) {
         try {
-            // Validate product exists
+            // 1. Get product with related info
             const product = await this.prisma.product.findUnique({
                 where: { id: productId },
                 include: {
@@ -112,15 +136,35 @@ export class ShopService {
                     discounts: true,
                 },
             });
+
             if (!product) {
                 throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
             }
 
-            return product
-        } catch (error) {
+            // 2. Check if user has this product in wishlist
+            let is_favorite = false;
+            if (userId) {
+                const favorite = await this.prisma.wishlist.findFirst({
+                    where: {
+                        user_id: userId,
+                        product_id: productId,
+                    },
+                });
+                is_favorite = !!favorite;
+            }
 
+            // 3. Return enriched product
+            return {
+                ...product,
+                is_favorite,
+            };
+
+        } catch (error) {
+            console.error('Error in viewProduct:', error);
+            throw new HttpException('Could not load product', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     async viewRelativeProduct(productId: number, userId?: number) {
         try {
             // Step 1: Find the current product and its category
@@ -160,7 +204,7 @@ export class ShopService {
             if (userId) {
                 const productIds = relatedProducts.map((product) => product.id);
 
-                const favoriteEntries = await this.prisma.favorite.findMany({
+                const favoriteEntries = await this.prisma.wishlist.findMany({
                     where: {
                         user_id: userId,
                         product_id: { in: productIds },
@@ -248,17 +292,22 @@ export class ShopService {
         });
     }
 
-    
+
     async getAllQuestions(productId: number) {
         return this.prisma.productQuestion.findMany({
             where: { product_id: productId },
             include: {
-                user: true,  // user can be null
-                comments: true,  // user can be null
+                user: true, // Include the user who asked the question
+                comments: {
+                    include: {
+                        user: true, // Include the user who wrote the comment
+                    },
+                },
             },
             orderBy: { created_at: 'desc' },
         });
     }
+
 
     // Create product question
     async createProductQuestion(data: {
@@ -276,6 +325,65 @@ export class ShopService {
                 question: data.question,
             },
         });
+    }
+
+    async likeQuestion(
+        productId: number,
+        questionId: number,
+        dto: LikeQuestionDto,
+    ) {
+        const question = await this.prisma.productQuestion.findFirst({
+            where: {
+                id: questionId,
+                product_id: productId,
+            },
+        });
+
+        if (!question) {
+            throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+        }
+
+        const updated = await this.prisma.productQuestion.update({
+            where: { id: questionId },
+            data: {
+                likes: {
+                    increment: dto.like ? 1 : -1,
+                },
+            },
+        });
+
+        return {
+            message: dto.like ? 'Liked question' : 'Unliked question',
+            data: {
+                id: updated.id,
+                likes: updated.likes,
+            },
+        };
+    }
+
+    async addComment(userId: number, questionId: number, dto: CreateQuestionCommentDto) {
+        // Optional: Validate that the question exists
+        const question = await this.prisma.productQuestion.findUnique({
+            where: { id: questionId },
+        });
+
+        if (!question) {
+            throw new HttpException('Question not found', HttpStatus.NOT_FOUND);
+        }
+
+        const comment = await this.prisma.productQuestionComment.create({
+            data: {
+                question_id: questionId,
+                user_id: userId,
+                comment: dto.comment,
+            },
+        });
+
+        return {
+            status: HttpStatus.CREATED,
+            message: 'Comment added successfully',
+            data: comment,
+        };
     }
 
 

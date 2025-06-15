@@ -44,7 +44,7 @@ export class HomeService {
             if (userId) {
                 // Fetch favorite entries for this user and these products
                 const productIds = products.map((product) => product.id);
-                const favoriteEntries = await this.prisma.favorite.findMany({
+                const favoriteEntries = await this.prisma.wishlist.findMany({
                     where: {
                         user_id: userId,
                         product_id: { in: productIds },
@@ -94,7 +94,7 @@ export class HomeService {
             if (userId) {
                 const productIds = products.map((product) => product.id);
 
-                const favoriteEntries = await this.prisma.favorite.findMany({
+                const favoriteEntries = await this.prisma.wishlist.findMany({
                     where: {
                         user_id: userId,
                         product_id: { in: productIds },
@@ -123,39 +123,40 @@ export class HomeService {
     }
 
 
-    async addFavorite(userId: number, productId: number) {
+    async addWishlist(userId: number, productId: number) {
         try {
             // Validate product exists
             const product = await this.prisma.product.findUnique({
                 where: { id: productId },
             });
+
             if (!product) {
                 throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
             }
 
-            // Check if favorite exists
-            const existingFavorite = await this.prisma.favorite.findFirst({
+            // Check if wishlist exists
+            const existingWishlist = await this.prisma.wishlist.findFirst({
                 where: {
                     user_id: userId,
                     product_id: productId,
                 },
             });
 
-            if (existingFavorite) {
-                // Remove favorite
-                await this.prisma.favorite.delete({
+            if (existingWishlist) {
+                // Remove wishlist
+                await this.prisma.wishlist.delete({
                     where: {
-                        id: existingFavorite.id,
+                        id: existingWishlist.id,
                     },
                 });
                 return {
                     status: HttpStatus.OK,
                     action: 'removed',
-                    message: 'Product removed from favorites',
+                    message: 'Product removed from wishlists',
                 };
             } else {
-                // Add favorite
-                const favorite = await this.prisma.favorite.create({
+                // Add wishlist
+                const wishlist = await this.prisma.wishlist.create({
                     data: {
                         user_id: userId,
                         product_id: productId,
@@ -166,19 +167,19 @@ export class HomeService {
                     status: HttpStatus.OK,
                     action: 'added',
                     data: {
-                        id: favorite.id,
-                        userId: favorite.user_id,
-                        productId: favorite.product_id,
-                        createdAt: favorite.created_at,
+                        id: wishlist.id,
+                        userId: wishlist.user_id,
+                        productId: wishlist.product_id,
+                        createdAt: wishlist.created_at,
                     },
                 };
             }
         } catch (error) {
-            console.error('Error in addFavorite:', error);
+            console.error('Error in addWishlist:', error);
             if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-                throw new HttpException('Product already favorited', HttpStatus.CONFLICT);
+                throw new HttpException('Product already wishlisted', HttpStatus.CONFLICT);
             }
-            throw new HttpException('Could not toggle favorite', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException('Could not toggle wishlist', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
