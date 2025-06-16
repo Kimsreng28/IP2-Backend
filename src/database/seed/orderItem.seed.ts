@@ -11,6 +11,8 @@ export class OrderItemSeed {
     public static async seed() {
         try {
             await this.prisma.$connect();
+            const orders = await this.prisma.order.findMany({ take: 3 });
+            const products = await this.prisma.product.findMany({ take: 6 });
 
             // Sample order items data
             const orderItems = [
