@@ -136,7 +136,7 @@ export class ShopService {
     try {
       // 1. Get product with related info
       const product = await this.prisma.product.findUnique({
-        where: { id: productId },
+        where: { id: 1 },
         include: {
           category: true,
           brand: true,
@@ -149,40 +149,9 @@ export class ShopService {
         throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
       }
 
-      // Initialize response object
-      const response: any = {
-        ...product,
-        is_favorite: false,
-        in_cart: false,
-        cart_quantity: 0,
-      };
-
-      if (userId) {
-        // 2. Check if user has this product in wishlist
-        const favorite = await this.prisma.wishlist.findFirst({
-          where: {
-            user_id: userId,
-            product_id: productId,
-          },
-        });
-        response.is_favorite = !!favorite;
-
-        // 3. Check if product is in cart
-        const cartItem = await this.prisma.cart.findFirst({
-          where: {
-            user_id: userId,
-            product_id: productId,
-          },
-        });
-
-        if (cartItem) {
-          response.in_cart = true;
-          response.cart_quantity = cartItem.quantity;
-        }
-      }
-
+     
       // 4. Return enriched product
-      return response;
+      return product;
     } catch (error) {
       console.error('Error in viewProduct:', error);
       throw new HttpException(

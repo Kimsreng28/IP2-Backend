@@ -10,6 +10,7 @@ export class DashboardController {
 
   @Get()
   async getAll() {
+    return;
     return this. _service.getData();
   }
   @Get('user') // Keep user listing at /admin/permission/users
