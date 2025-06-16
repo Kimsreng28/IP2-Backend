@@ -149,23 +149,40 @@ export class ShopService {
         throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
       }
 
-      // 2. Check if user has this product in wishlist
-      let is_favorite = false;
+      // Initialize response object
+      const response: any = {
+        ...product,
+        is_favorite: false,
+        in_cart: false,
+        cart_quantity: 0,
+      };
+
       if (userId) {
+        // 2. Check if user has this product in wishlist
         const favorite = await this.prisma.wishlist.findFirst({
           where: {
             user_id: userId,
             product_id: productId,
           },
         });
-        is_favorite = !!favorite;
+        response.is_favorite = !!favorite;
+
+        // 3. Check if product is in cart
+        const cartItem = await this.prisma.cart.findFirst({
+          where: {
+            user_id: userId,
+            product_id: productId,
+          },
+        });
+
+        if (cartItem) {
+          response.in_cart = true;
+          response.cart_quantity = cartItem.quantity;
+        }
       }
 
-      // 3. Return enriched product
-      return {
-        ...product,
-        is_favorite,
-      };
+      // 4. Return enriched product
+      return response;
     } catch (error) {
       console.error('Error in viewProduct:', error);
       throw new HttpException(
@@ -180,12 +197,6 @@ export class ShopService {
       // Step 1: Find the current product and its category
       const product = await this.prisma.product.findUnique({
         where: { id: productId },
-        include: {
-          category: true,
-          brand: true,
-          product_images: true,
-          discounts: true,
-        },
       });
 
       if (!product) {
@@ -206,35 +217,55 @@ export class ShopService {
           product_images: true,
           discounts: true,
         },
-        take: 10, // or any limit you prefer
+        take: 10,
       });
 
-      let productsWithFavorites = relatedProducts;
+      let enrichedProducts = relatedProducts;
 
       if (userId) {
-        const productIds = relatedProducts.map((product) => product.id);
+        // Get all product IDs for batch queries
+        const productIds = relatedProducts.map((p) => p.id);
 
-        const favoriteEntries = await this.prisma.wishlist.findMany({
+        // Get wishlist status for all products
+        const favorites = await this.prisma.wishlist.findMany({
           where: {
             user_id: userId,
             product_id: { in: productIds },
           },
-          select: { product_id: true },
         });
+        const favoriteProductIds = new Set(favorites.map((f) => f.product_id));
 
-        const favoritedProductIds = new Set(
-          favoriteEntries.map((entry) => entry.product_id),
+        // Get cart status for all products
+        const cartItems = await this.prisma.cart.findMany({
+          where: {
+            user_id: userId,
+            product_id: { in: productIds },
+          },
+        });
+        const cartItemsMap = new Map(
+          cartItems.map((item) => [item.product_id, item]),
         );
 
-        productsWithFavorites = relatedProducts.map((product) => ({
+        // Enrich each product with status information
+        enrichedProducts = relatedProducts.map((product) => ({
           ...product,
-          is_favorite: favoritedProductIds.has(product.id),
+          is_favorite: favoriteProductIds.has(product.id),
+          in_cart: cartItemsMap.has(product.id),
+          cart_quantity: cartItemsMap.get(product.id)?.quantity || 0,
+        }));
+      } else {
+        // For non-logged in users, set default values
+        enrichedProducts = relatedProducts.map((product) => ({
+          ...product,
+          is_favorite: false,
+          in_cart: false,
+          cart_quantity: 0,
         }));
       }
 
       return {
         status: HttpStatus.OK,
-        data: productsWithFavorites,
+        data: enrichedProducts,
       };
     } catch (error) {
       console.error('Error in viewRelativeProduct:', error);
@@ -409,90 +440,279 @@ export class ShopService {
     };
   }
 
-  async toggleWishlist(userId: number, productId: number) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
-
-    if (!product) {
-      throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
-    }
-
-    const existingWishlistItem = await this.prisma.wishlist.findFirst({
-      where: {
-        user_id: userId,
-        product_id: productId,
+  // ========== Wishlist Methods ==========
+  async getWishlist(userId: number) {
+    const wishlistItems = await this.prisma.wishlist.findMany({
+      where: { user_id: userId },
+      include: {
+        product: {
+          include: {
+            product_images: {
+              where: { is_primary: true },
+              take: 1,
+            },
+          },
+        },
       },
+      orderBy: { created_at: 'desc' },
     });
 
-    if (existingWishlistItem) {
-      // If it exists, remove it
-      await this.prisma.wishlist.delete({
-        where: { id: existingWishlistItem.id },
+    return wishlistItems.map((item) => ({
+      id: item.id,
+      product_id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      image_url: item.product.product_images[0]?.image_url || null,
+      created_at: item.created_at,
+    }));
+  }
+
+  async toggleWishlist(userId: number, productId: number) {
+    try {
+      // Verify product exists
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
       });
-      return {
-        status: HttpStatus.OK,
-        message: 'Product removed from wishlist',
-      };
-    } else {
-      // If it doesn't exist, add it
-      await this.prisma.wishlist.create({
-        data: {
+
+      if (!product) {
+        throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+      }
+
+      // Check if item already exists in wishlist
+      const existingItem = await this.prisma.wishlist.findFirst({
+        where: {
           user_id: userId,
           product_id: productId,
         },
       });
-      return {
-        status: HttpStatus.CREATED,
-        message: 'Product added to wishlist',
-      };
+
+      if (existingItem) {
+        // Remove from wishlist
+        await this.prisma.wishlist.delete({
+          where: { id: existingItem.id },
+        });
+        return {
+          status: HttpStatus.OK,
+          message: 'Product removed from wishlist',
+          isFavorite: false,
+        };
+      } else {
+        // Add to wishlist
+        await this.prisma.wishlist.create({
+          data: {
+            user_id: userId,
+            product_id: productId,
+          },
+        });
+        return {
+          status: HttpStatus.CREATED,
+          message: 'Product added to wishlist',
+          isFavorite: true,
+        };
+      }
+    } catch (error) {
+      console.error('Error in toggleWishlist:', error);
+      throw new HttpException(
+        'Failed to update wishlist',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
-  async addToCart(userId: number, productId: number, quantity: number = 1) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
+  async getWishlistCount(userId: number) {
+    const count = await this.prisma.wishlist.count({
+      where: { user_id: userId },
     });
+    return { count };
+  }
 
-    if (!product) {
-      throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
-    }
-
-    // Check if the product is already in the cart
-    const existingCartItem = await this.prisma.cart.findFirst({
+  async isProductInWishlist(userId: number, productId: number) {
+    const item = await this.prisma.wishlist.findFirst({
       where: {
         user_id: userId,
         product_id: productId,
       },
     });
+    return { isFavorite: !!item };
+  }
 
-    if (existingCartItem) {
-      // If it exists, update the quantity
-      const updatedCartItem = await this.prisma.cart.update({
-        where: { id: existingCartItem.id },
-        data: {
-          quantity: existingCartItem.quantity + quantity,
+  // ========== Cart Methods ==========
+  async getCart(userId: number) {
+    const cartItems = await this.prisma.cart.findMany({
+      where: { user_id: userId },
+      include: {
+        product: {
+          include: {
+            product_images: {
+              where: { is_primary: true },
+              take: 1,
+            },
+          },
         },
+      },
+    });
+
+    return cartItems.map((item) => ({
+      id: item.id,
+      product_id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      image_url: item.product.product_images[0]?.image_url || null,
+      stock: item.product.stock,
+    }));
+  }
+
+  async addToCart(userId: number, productId: number, quantity: number = 1) {
+    try {
+      // Verify product exists and has stock
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
       });
-      return {
-        status: HttpStatus.OK,
-        message: 'Product quantity updated in cart',
-        data: updatedCartItem,
-      };
-    } else {
-      // If it doesn't exist, add it to the cart
-      const newCartItem = await this.prisma.cart.create({
-        data: {
+
+      if (!product) {
+        throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (product.stock < quantity) {
+        throw new HttpException('Insufficient stock', HttpStatus.BAD_REQUEST);
+      }
+
+      // Check if product already in cart
+      const existingCartItem = await this.prisma.cart.findFirst({
+        where: {
           user_id: userId,
           product_id: productId,
-          quantity,
         },
       });
-      return {
-        status: HttpStatus.CREATED,
-        message: 'Product added to cart',
-        data: newCartItem,
-      };
+
+      if (existingCartItem) {
+        // Update quantity
+        const newQuantity = existingCartItem.quantity + quantity;
+        if (product.stock < newQuantity) {
+          throw new HttpException('Insufficient stock', HttpStatus.BAD_REQUEST);
+        }
+
+        const updatedItem = await this.prisma.cart.update({
+          where: { id: existingCartItem.id },
+          data: {
+            quantity: newQuantity,
+          },
+        });
+
+        return {
+          status: HttpStatus.OK,
+          message: 'Cart item quantity updated',
+          data: updatedItem,
+        };
+      } else {
+        // Add new item to cart
+        const newItem = await this.prisma.cart.create({
+          data: {
+            user_id: userId,
+            product_id: productId,
+            quantity,
+          },
+        });
+
+        return {
+          status: HttpStatus.CREATED,
+          message: 'Product added to cart',
+          data: newItem,
+        };
+      }
+    } catch (error) {
+      console.error('Error in addToCart:', error);
+      throw new HttpException(
+        'Failed to add to cart',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
+  }
+
+  async updateCartItem(userId: number, cartItemId: number, quantity: number) {
+    if (quantity < 1) {
+      throw new HttpException(
+        'Quantity must be at least 1',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Verify cart item belongs to user
+    const cartItem = await this.prisma.cart.findFirst({
+      where: {
+        id: cartItemId,
+        user_id: userId,
+      },
+      include: {
+        product: true,
+      },
+    });
+
+    if (!cartItem) {
+      throw new HttpException('Cart item not found', HttpStatus.NOT_FOUND);
+    }
+
+    // Check stock
+    if (cartItem.product.stock < quantity) {
+      throw new HttpException('Insufficient stock', HttpStatus.BAD_REQUEST);
+    }
+
+    // Update quantity
+    const updatedItem = await this.prisma.cart.update({
+      where: { id: cartItemId },
+      data: { quantity },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Cart item updated',
+      data: updatedItem,
+    };
+  }
+
+  async removeFromCart(userId: number, cartItemId: number) {
+    // Verify cart item belongs to user
+    const cartItem = await this.prisma.cart.findFirst({
+      where: {
+        id: cartItemId,
+        user_id: userId,
+      },
+    });
+
+    if (!cartItem) {
+      throw new HttpException('Cart item not found', HttpStatus.NOT_FOUND);
+    }
+
+    await this.prisma.cart.delete({
+      where: { id: cartItemId },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Item removed from cart',
+    };
+  }
+
+  async getCartCount(userId: number) {
+    const result = await this.prisma.cart.aggregate({
+      where: { user_id: userId },
+      _sum: {
+        quantity: true,
+      },
+    });
+
+    return { count: result._sum.quantity || 0 };
+  }
+
+  async clearCart(userId: number) {
+    await this.prisma.cart.deleteMany({
+      where: { user_id: userId },
+    });
+
+    return {
+      status: HttpStatus.OK,
+      message: 'Cart cleared successfully',
+    };
   }
 }
