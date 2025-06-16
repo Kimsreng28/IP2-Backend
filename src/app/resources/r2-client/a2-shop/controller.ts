@@ -39,21 +39,22 @@ export class ShopController {
     return this._service.getSetup();
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get('products')
   async getFilteredProducts(@Query() query) {
     const userId = 1;
     return this._service.getFilteredProducts(query, userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard) 
   @Get('product/:product_id')
   async viewProduct(
     @Param('product_id', ParseIntPipe) productId: number, // Changed 'id' to 'product_id'
-    @UserDecorator() user?: { userId?: number },
+    // @UserDecorator() user?: { userId?: number },
   ) {
     try {
-      const product = await this._service.viewProduct(productId, user?.userId);
+      const userId = 1
+      const product = await this._service.viewProduct(productId, userId);
       return {
         status: HttpStatus.OK,
         data: product,
