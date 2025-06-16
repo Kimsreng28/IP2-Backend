@@ -14,6 +14,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { RoleEnum } from '@prisma/client';
+import { RolesDecorator } from 'src/app/core/decorators/roles.decorator';
 import UserDecorator from 'src/app/core/decorators/user.decorator';
 import { JwtAuthGuard } from 'src/app/core/guards/jwt-auth.guard';
 import { ShopService } from './service';
@@ -150,40 +152,41 @@ export class ShopController {
 
   // ======================= Wishlist =======================
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('wishlist')
   async getWishlist(@Req() req): Promise<WishlistResponseDto[]> {
     return this._service.getWishlist(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Post('wishlist/:productId')
-  async addToWishlist(
-    @Req() req,
+  async toggleWishlist(
     @Param('productId', ParseIntPipe) productId: number,
+    @UserDecorator() user: { userId: number },
   ) {
-    try {
-      return await this._service.toggleWishlist(req.user.id, productId);
-    } catch (error) {
-      throw new HttpException(
-        error.message,
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return this._service.toggleWishlist(user.userId, productId);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Delete('wishlist/:productId')
-  async removeFromWishlist(@Req() req, @Param('productId') productId: string) {
-    return this._service.toggleWishlist(req.user.id, +productId);
+  async removeFromWishlist(
+    @Param('productId', ParseIntPipe) productId: number,
+    @UserDecorator() user: { userId: number },
+  ) {
+    return this._service.removeFromWishlist(user.userId, productId);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('wishlist/count')
   async getWishlistCount(@Req() req) {
     return this._service.getWishlistCount(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('wishlist/check/:productId')
   async checkWishlist(@Req() req, @Param('productId') productId: string) {
     return this._service.isProductInWishlist(req.user.id, +productId);
@@ -191,29 +194,48 @@ export class ShopController {
 
   // ======================= Cart =======================
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('cart')
   async getCart(@Req() req): Promise<CartItemResponseDto[]> {
     return this._service.getCart(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Post('cart')
-  async addToCart(@Req() req, @Body() dto: AddToCartDto) {
+  async addToCart(
+    @Body() dto: AddToCartDto,
+    @UserDecorator() user: { userId: number }, // Properly typed user decorator
+  ) {
     try {
-      return await this._service.addToCart(
-        req.user.id,
+      console.log('Adding to cart for user:', user.userId); // Debug log
+      const result = await this._service.addToCart(
+        user.userId,
         dto.productId,
         dto.quantity || 1,
       );
+      return {
+        statusCode: HttpStatus.OK,
+        message: result.message,
+        data: result.data,
+      };
     } catch (error) {
+      console.error('Cart Controller Error:', {
+        error,
+        userId: user?.userId,
+        productId: dto.productId,
+        timestamp: new Date().toISOString(),
+      });
+
       throw new HttpException(
-        error.message,
+        error.message || 'Failed to add to cart',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Put('cart/:id')
   async updateCartItem(
     @Req() req,
@@ -224,12 +246,17 @@ export class ShopController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Delete('cart/:id')
-  async removeFromCart(@Req() req, @Param('id') cartItemId: string) {
-    return this._service.removeFromCart(req.user.id, +cartItemId);
+  async removeFromCart(
+    @Param('id', ParseIntPipe) cartItemId: number,
+    @UserDecorator() user: { userId: number },
+  ) {
+    return this._service.removeFromCart(user.userId, cartItemId);
   }
 
   @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('cart/count')
   async getCartCount(@Req() req) {
     return this._service.getCartCount(req.user.id);
