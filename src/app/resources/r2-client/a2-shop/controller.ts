@@ -257,6 +257,13 @@ export class ShopController {
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.CUSTOMER)
+  @Delete('cart')
+  async clearCart(@Req() req) {
+    return this._service.clearCart(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.CUSTOMER)
   @Get('cart/count')
   async getCartCount(@Req() req) {
     return this._service.getCartCount(req.user.id);
