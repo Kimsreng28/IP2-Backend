@@ -68,7 +68,8 @@ export class DashboardService {
         try {
             // Validate if vendor exists
             const vendorExists = await this.prisma.vendor.findUnique({
-                where: { id: vendorId },
+                where: { user_id: vendorId },
+                select: { id: true },
             });
 
             if (!vendorExists) {

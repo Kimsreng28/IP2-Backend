@@ -10,11 +10,12 @@ import { DeviceTrackerMiddleware } from 'src/app/core/middlewares/device_tracker
 import { DashboardModule } from './a1-dashbord/module';
 import { ProductModule } from './a2-product/module';
 import { VendorEventModule } from './a3-event/module';
+import { OrderHistoryModule } from './a4-history/module';
 
 // ===========================================================================>> Custom Library
 
 @Module({
-  imports: [DashboardModule, ProductModule, VendorEventModule],
+  imports: [DashboardModule, ProductModule, VendorEventModule, OrderHistoryModule],
 })
 export class VendorModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
