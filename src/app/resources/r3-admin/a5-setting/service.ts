@@ -21,6 +21,13 @@ export class SettingAdminService{
             { name: { contains: key, mode: 'insensitive' } }
             ];
         }
+        if (key) {
+            where.OR = [
+            { name: { contains: key, mode: 'insensitive' } },
+            ];
+        }
+        console.log(key)
+
 
         const [categories, totalCount] = await Promise.all([
             this.prisma.category.findMany({
@@ -41,7 +48,8 @@ export class SettingAdminService{
             }),
             this.prisma.category.count({ where })
         ]);
-
+        console.log(categories)
+        
         return {
             data: categories,
             pagination: {

@@ -48,15 +48,15 @@ export class UserAdminService{
             this.prisma.user.findMany({
                 where,
                 select: {
-                id: true,
-                first_name: true,
-                last_name: true,
-                email: true,
-                role: true,
-                status: true,
-                created_at: true,
-                updated_at: true,
-                avatar: true
+                    id: true,
+                    first_name: true,
+                    last_name: true,
+                    email: true,
+                    role: true,
+                    status: true,
+                    created_at: true,
+                    updated_at: true,
+                    avatar: true
                 },
                 orderBy: { [sortBy]: sortOrder },
                 skip: (pageNumber - 1) * limitNumber,

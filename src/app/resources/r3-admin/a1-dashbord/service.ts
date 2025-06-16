@@ -12,7 +12,7 @@ export class DashboardService {
   async getData(){
     const products = await this.getProducts()
     const users = await this.getUsers()
-    const sales = 24
+    const sales = await this.getOrder()
 
     return{
       products,
@@ -33,15 +33,36 @@ export class DashboardService {
         },
       });
 
+      // Get product order statistics (sum of quantities)
+      const orderStatsPromise = this.prisma.orderItem.groupBy({
+        by: ['product_id'],
+        _sum: { quantity: true },
+      });
+
       // Count total products
       const countPromise = this.prisma.product.count();
 
-      // Await both promises concurrently
-      const [products, totalCount] = await Promise.all([productsPromise, countPromise]);
+      // Await all promises concurrently
+      const [products, orderStats, totalCount] = await Promise.all([
+        productsPromise,
+        orderStatsPromise,
+        countPromise
+      ]);
+
+      // Create a map for quick lookup of order quantities
+      const orderQuantities = new Map(
+        orderStats.map(stat => [stat.product_id, stat._sum.quantity || 0])
+      );
+
+      // Add total_ordered to each product
+      const productsWithOrderCount = products.map(product => ({
+        ...product,
+        total_ordered: orderQuantities.get(product.id) || 0,
+      }));
 
       return {
-        data: products,
-        totalCount, // total number of products
+        data: productsWithOrderCount,
+        totalCount,
       };
     } catch (err) {
       throw new BadRequestException(`Could not fetch products: ${err.message}`);
@@ -94,7 +115,39 @@ export class DashboardService {
       throw new BadRequestException(`Could not fetch users: ${err.message}`);
     }
   }
+  async getOrder() {
+    try {
+      // Get all orders with their order items and products
+      const orders = await this.prisma.order.findMany({
+        include: {
+          order_items: {
+            include: {
+              product: true // Include product details if needed
+            }
+          }
+        },
+        orderBy: {
+          created_at: 'desc'
+        }
+      });
 
+      // Get total count of orders
+      const totalOrders = await this.prisma.order.count();
 
+      // Calculate total number of products ordered (sum of all quantities)
+      const totalProductsOrdered = await this.prisma.orderItem.aggregate({
+        _sum: {
+          quantity: true
+        }
+      });
 
+      return {
+        // orders,
+        totalOrders,
+        // totalProductsOrdered: totalProductsOrdered._sum.quantity || 0
+      };
+    } catch (err) {
+      throw new BadRequestException(err);
+    }
+  }
 }
