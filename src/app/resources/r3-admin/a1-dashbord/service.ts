@@ -1,5 +1,6 @@
 // ===========================================================================>> Core Library
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { RoleEnum } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 // ===========================================================================>> Custom Library
@@ -8,9 +9,21 @@ export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
   // ===================================================>> Get All Products
+  async getData(){
+    const products = await this.getProducts()
+    const users = await this.getUsers()
+    const sales = await this.getOrder()
+
+    return{
+      products,
+      users,
+      sales
+    }
+  }
   async getProducts() {
     try {
-      const products = await this.prisma.product.findMany({
+      // Fetch products with related category and brand
+      const productsPromise = this.prisma.product.findMany({
         include: {
           category: true,
           brand: true,
@@ -20,182 +33,121 @@ export class DashboardService {
         },
       });
 
+      // Get product order statistics (sum of quantities)
+      const orderStatsPromise = this.prisma.orderItem.groupBy({
+        by: ['product_id'],
+        _sum: { quantity: true },
+      });
+
+      // Count total products
+      const countPromise = this.prisma.product.count();
+
+      // Await all promises concurrently
+      const [products, orderStats, totalCount] = await Promise.all([
+        productsPromise,
+        orderStatsPromise,
+        countPromise
+      ]);
+
+      // Create a map for quick lookup of order quantities
+      const orderQuantities = new Map(
+        orderStats.map(stat => [stat.product_id, stat._sum.quantity || 0])
+      );
+
+      // Add total_ordered to each product
+      const productsWithOrderCount = products.map(product => ({
+        ...product,
+        total_ordered: orderQuantities.get(product.id) || 0,
+      }));
+
       return {
-        data: products,
-        message: 'Products retrieved successfully',
+        data: productsWithOrderCount,
+        totalCount,
       };
     } catch (err) {
       throw new BadRequestException(`Could not fetch products: ${err.message}`);
     }
   }
 
-  // ===================================================>> Get Single Product
-  async getProduct(id: number) {
+
+  async getUsers() {
     try {
-      const product = await this.prisma.product.findUnique({
-        where: { id },
-        include: {
-          category: true,
-          brand: true,
+      // Fetch vendor users
+      const usersPromise = this.prisma.user.findMany({
+        where: { role: RoleEnum.VENDOR },
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          role: true,
+          status: true,
+          created_at: true,
+          updated_at: true,
+          avatar: true,
         },
       });
 
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
+      // Count total vendors
+      const countPromise = this.prisma.user.count({
+        where: { role: RoleEnum.VENDOR },
+      });
+
+      // Get last updated timestamp
+      const lastUpdatedPromise = this.prisma.user.aggregate({
+        _max: { updated_at: true },
+        where: { role: RoleEnum.VENDOR }, // Optional: limit to vendors only
+      });
+
+      // Await all promises in parallel
+      const [users, totalCount, lastUpdated] = await Promise.all([
+        usersPromise,
+        countPromise,
+        lastUpdatedPromise,
+      ]);
 
       return {
-        data: product,
-        message: 'Product retrieved successfully',
+        // data: users,
+        totalCount, // total number of vendor users
+        // lastUpdated: lastUpdated._max.updated_at,
       };
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not fetch product: ${err.message}`);
+      throw new BadRequestException(`Could not fetch users: ${err.message}`);
     }
   }
-
-  // ===================================================>> Create Product
-  async createProduct(data: {
-    name: string;
-    description: string;
-    price: number;
-    stock: number;
-    category_id: number;
-    brand_id: number;
-    is_new_arrival?: boolean;
-    is_best_seller?: boolean;
-  }) {
+  async getOrder() {
     try {
-      // Validate category exists
-      const category = await this.prisma.category.findUnique({
-        where: { id: data.category_id },
-      });
-      if (!category) {
-        throw new BadRequestException('Invalid category ID');
-      }
-
-      // Validate brand exists
-      const brand = await this.prisma.brand.findUnique({
-        where: { id: data.brand_id },
-      });
-      if (!brand) {
-        throw new BadRequestException('Invalid brand ID');
-      }
-
-      const product = await this.prisma.product.create({
-        data: {
-          ...data,
-          is_new_arrival: data.is_new_arrival || false,
-          is_best_seller: data.is_best_seller || false,
-          created_at: new Date(),
-        },
+      // Get all orders with their order items and products
+      const orders = await this.prisma.order.findMany({
         include: {
-          category: true,
-          brand: true,
+          order_items: {
+            include: {
+              product: true // Include product details if needed
+            }
+          }
         },
-      });
-
-      return {
-        data: product,
-        message: 'Product created successfully',
-      };
-    } catch (err) {
-      throw new BadRequestException(`Could not create product: ${err.message}`);
-    }
-  }
-
-  // ===================================================>> Update Product
-  async updateProduct(
-    id: number,
-    data: {
-      name?: string;
-      description?: string;
-      price?: number;
-      stock?: number;
-      category_id?: number;
-      brand_id?: number;
-      is_new_arrival?: boolean;
-      is_best_seller?: boolean;
-    },
-  ) {
-    try {
-      // Check if product exists
-      const existingProduct = await this.prisma.product.findUnique({
-        where: { id },
-      });
-      if (!existingProduct) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      // Validate category if being updated
-      if (data.category_id) {
-        const category = await this.prisma.category.findUnique({
-          where: { id: data.category_id },
-        });
-        if (!category) {
-          throw new BadRequestException('Invalid category ID');
+        orderBy: {
+          created_at: 'desc'
         }
-      }
+      });
 
-      // Validate brand if being updated
-      if (data.brand_id) {
-        const brand = await this.prisma.brand.findUnique({
-          where: { id: data.brand_id },
-        });
-        if (!brand) {
-          throw new BadRequestException('Invalid brand ID');
+      // Get total count of orders
+      const totalOrders = await this.prisma.order.count();
+
+      // Calculate total number of products ordered (sum of all quantities)
+      const totalProductsOrdered = await this.prisma.orderItem.aggregate({
+        _sum: {
+          quantity: true
         }
-      }
-
-      const updatedProduct = await this.prisma.product.update({
-        where: { id },
-        data: {
-          ...data,
-          created_at: new Date(),
-        },
-        include: {
-          category: true,
-          brand: true,
-        },
       });
 
       return {
-        data: updatedProduct,
-        message: 'Product updated successfully',
+        // orders,
+        totalOrders,
+        // totalProductsOrdered: totalProductsOrdered._sum.quantity || 0
       };
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not update product: ${err.message}`);
-    }
-  }
-
-  // ===================================================>> Delete Product
-  async deleteProduct(id: number) {
-    try {
-      // Check if product exists
-      const product = await this.prisma.product.findUnique({
-        where: { id },
-      });
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      await this.prisma.product.delete({
-        where: { id },
-      });
-
-      return {
-        message: 'Product deleted successfully',
-      };
-    } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new BadRequestException(`Could not delete product: ${err.message}`);
+      throw new BadRequestException(err);
     }
   }
 }

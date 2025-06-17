@@ -39,7 +39,7 @@ export class DashboardController {
   @Get('/recentOrders')
   async getRecentOrder(
     @UserDecorator() auth: any
-  ): Promise<{ message: string; recentOrder: any; }> {
+  ): Promise<{ message: string; recentOrders: any; }> {
     return this._service.getRecentOrder(auth.userId);
   }
 }

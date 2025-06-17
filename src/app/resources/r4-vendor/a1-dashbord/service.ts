@@ -63,7 +63,7 @@ export class DashboardService {
 
     async getRecentOrder(vendorId: number): Promise<{
         message: string;
-        recentOrder: any;
+        recentOrders: any;
     }> {
         try {
             // Validate if vendor exists
@@ -72,9 +72,12 @@ export class DashboardService {
                 select: { id: true },
             });
 
+            
             if (!vendorExists) {
                 throw new NotFoundException('Vendor not found');
             }
+
+            vendorId = vendorExists.id;
 
             const topProducts = await this.prisma.orderItem.groupBy({
                 by: ['product_id'],
@@ -108,7 +111,7 @@ export class DashboardService {
             if (!topProducts.length) {
                 return {
                     message: 'No recent orders found for this vendor',
-                    recentOrder: [],
+                    recentOrders: [],
                 };
             }
 
@@ -125,7 +128,7 @@ export class DashboardService {
                 },
             });
 
-            const recentOrder = topProducts.map((tp) => {
+            const recentOrders = topProducts.map((tp) => {
                 const product = products.find((p) => p.id === tp.product_id);
                 const totalOrder = tp._sum.quantity || 0;
                 const totalAmount = product ? product.price * totalOrder : 0;
@@ -141,7 +144,7 @@ export class DashboardService {
 
             return {
                 message: 'Top 5 recent vendor product orders fetched successfully',
-                recentOrder,
+                recentOrders,
             };
         } catch (error) {
             console.error('Error in getRecentOrder:', error);

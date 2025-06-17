@@ -7,7 +7,7 @@ export class SettingAdminController{
   constructor(
     private readonly _service: SettingAdminService
 ) {}
-    @Get('categor')
+    @Get('category')
     getAllCategory(
         @Query('key') key?: string,
         @Query('sortBy') sortBy?: 'id' | 'name',
