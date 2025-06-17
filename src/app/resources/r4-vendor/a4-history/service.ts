@@ -64,11 +64,18 @@ export class OrderHistoryService {
                         total_amount: sortByPrice,
                     },
                     include: {
-                        user: true,
+                        user: {
+                            select: {
+                                first_name: true,
+                                last_name: true,
+                                email: true,
+                                avatar: true
+                            }
+                        },
+                        vendor_orders: true,
                         order_items: {
                             include: { product: true },
                         },
-                        vendor_orders: true,
                     },
                 }),
                 this.prisma.order.count({

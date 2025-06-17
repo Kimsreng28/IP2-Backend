@@ -11,6 +11,8 @@ import { OrderStatusHistorySeed } from './seed/orderStatusHistory.seed';
 import { VendorEventSeed } from './seed/vendorEvent.seed';
 import { VendorOrderSeed } from './seed/vendorOrder.seed';
 import { shippingMethodSeed } from './seed/shippingMethod.seed';
+import { CreditCardSeed } from './seed/creditCard.seed';
+import { PaymentSeed } from './seed/payment.seed';
 
 class SeederInitializer {
   private prisma: PrismaClient;
@@ -33,24 +35,28 @@ class SeederInitializer {
     await this.prisma.shippingMethod.deleteMany();
     await this.prisma.orderStatusHistory.deleteMany();
     await this.prisma.orderItem.deleteMany();
-    await this.prisma.payment.deleteMany();
+
     // 2. Delete role associations and subtypes
     await this.prisma.admin.deleteMany();
     await this.prisma.vendor.deleteMany();
     await this.prisma.customer.deleteMany();
     await this.prisma.user_Role.deleteMany();
+    await this.prisma.creditCard.deleteMany();
+    await this.prisma.payment.deleteMany();
+    await this.prisma.order.deleteMany();
     // 3. Now it's safe to delete users
     await this.prisma.user.deleteMany();
   }
 
   // Seed data to table
   private async seedData() {
+    await shippingMethodSeed.seed();
     await UserSeed.seed();
     await ProductSeeder.seed();
-    // await VendorSeed.seed();
-    await VendorProductSeed.seed();
-    await shippingMethodSeed.seed();
+    await CreditCardSeed.seed();
     await OrderSeed.seed();
+    await PaymentSeed.seed();
+    await VendorProductSeed.seed();
     await OrderItemSeed.seed();
     await OrderStatusHistorySeed.seed();
     await VendorEventSeed.seed();

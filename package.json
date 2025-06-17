@@ -19,7 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "migrate": "prisma migrate dev",
-    "seeder": "ts-node src/database/seed/index.ts"
+    "seeder": "ts-node src/database/seed.ts"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
@@ -41,6 +41,7 @@
     "class-validator": "^0.14.1",
     "colors": "^1.4.0",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "express-handlebars": "^8.0.1",
     "moment": "^2.30.1",

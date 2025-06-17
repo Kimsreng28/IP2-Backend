@@ -13,7 +13,7 @@ export class ProductService {
 
     // async setUpData(): Promise<{ message: string; brands: any[]; categories: any[] }> {
     async setUpData(authId: number): Promise<{ message: string; brands: any[]; categories: any[] }> {
-        console.log('authId', authId);
+        // console.log('authId', authId);
         const brands = await this.prisma.brand.findMany();
         const categories = await this.prisma.category.findMany();
 
