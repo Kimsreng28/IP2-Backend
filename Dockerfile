@@ -5,14 +5,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /myapp
 
-# Install build dependencies
+# Install build dependencies for bcrypt and other native modules
 RUN apk add --no-cache python3 make g++
 
-# Copy package files
+# Copy package files for caching
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
+# Install all dependencies (including devDependencies)
 RUN npm ci
 
 # Copy source code
@@ -32,15 +32,19 @@ FROM node:20-alpine
 
 WORKDIR /myapp
 
+# Install runtime dependencies (e.g., for Prisma)
+RUN apk add --no-cache python3
+
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy necessary files
+# Copy only necessary files
 COPY --from=builder /myapp/dist ./dist
-COPY --from=builder /myapp/node_modules ./node_modules
 COPY --from=builder /myapp/package*.json ./
 COPY --from=builder /myapp/prisma ./prisma
-COPY --from=builder /myapp/src/database/seed ./src/database/seed
+
+# Install only production dependencies
+RUN npm ci --only=production
 
 # Set non-root user
 USER appuser
@@ -48,5 +52,5 @@ USER appuser
 # Expose the port
 EXPOSE 3001
 
-# Start the app with migrations and seeding
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run seeder && npm run start:prod"]
+# Start the app
+CMD ["node", "dist/main"]

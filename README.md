@@ -28,3 +28,4 @@ $ npx prisma db push --force-reset
 # show table 
 $ npx prisma studio
 ```
+$ docker compose exec mysql mysql -u root -p123456 -D ecommerce
