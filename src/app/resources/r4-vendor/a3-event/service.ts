@@ -5,9 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma, PrismaClient, VendorEvent } from '@prisma/client';
-import * as moment from 'moment';
 import { FileService } from 'src/app/services/file.service';
 import { CreateEventDto, UpdateEventDto } from './dto';
+const moment = require('moment'); // CommonJS require
 
 @Injectable()
 export class VendorEventService {
