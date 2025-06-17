@@ -39,8 +39,6 @@ export class UserAdminController{
         @Body() dto: any,
         @UploadedFiles() files?: Express.Multer.File[]
     ) {
-        console.log('Received DTO:', dto);
-        console.log('Received files:', files);
         return this._service.createUser(dto, files || []);
     }
 
