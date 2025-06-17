@@ -21,7 +21,6 @@
     "migrate": "prisma migrate dev",
     "seeder": "ts-node src/database/seed/index.ts",
     "seeder:prod": "node dist/database/seed/index.js"
-
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",

@@ -2,17 +2,16 @@
 import { PrismaClient } from '@prisma/client';
 import 'colors';
 import * as readlineSync from 'readline-sync';
-import { UserSeed } from './seed/user.seed';
-import { ProductSeeder } from './seed/product.seed';
-import { VendorProductSeed } from './seed/vendorProduct.seed';
-import { OrderSeed } from './seed/order.seed';
+import { CreditCardSeed } from './seed/creditCard.seed';
 import { OrderItemSeed } from './seed/orderItem.seed';
 import { OrderStatusHistorySeed } from './seed/orderStatusHistory.seed';
+import { PaymentSeed } from './seed/payment.seed';
+import { ProductSeeder } from './seed/product.seed';
+import { shippingMethodSeed } from './seed/shippingMethod.seed';
+import { UserSeed } from './seed/user.seed';
 import { VendorEventSeed } from './seed/vendorEvent.seed';
 import { VendorOrderSeed } from './seed/vendorOrder.seed';
-import { shippingMethodSeed } from './seed/shippingMethod.seed';
-import { CreditCardSeed } from './seed/creditCard.seed';
-import { PaymentSeed } from './seed/payment.seed';
+import { VendorProductSeed } from './seed/vendorProduct.seed';
 
 class SeederInitializer {
   private prisma: PrismaClient;
@@ -54,7 +53,7 @@ class SeederInitializer {
     await UserSeed.seed();
     await ProductSeeder.seed();
     await CreditCardSeed.seed();
-    await OrderSeed.seed();
+    // await OrderSeed.seed();
     await PaymentSeed.seed();
     await VendorProductSeed.seed();
     await OrderItemSeed.seed();
