@@ -14,7 +14,7 @@ export class OrderHistoryService {
         authId: number,
         page: number,
         limit: number,
-        sortByPrice: 'asc' | 'desc',
+        sort: 'asc' | 'desc',
         keySearch?: string,
     ): Promise<{
         ordersHistories: Order[];
@@ -61,7 +61,7 @@ export class OrderHistoryService {
                     skip,
                     take: limit,
                     orderBy: {
-                        total_amount: sortByPrice,
+                        id: sort,
                     },
                     include: {
                         user: {
@@ -97,140 +97,59 @@ export class OrderHistoryService {
         }
     }
 
-    // async getRecentOrder(vendorId: number): Promise<{
-    //     message: string;
-    //     recentOrder: any;
-    // }> {
-    //     try {
-    //         // Validate if vendor exists
-    //         const vendorExists = await this.prisma.vendor.findUnique({
-    //             where: { id: vendorId },
-    //         });
+    async getOrderHistory(
+        authId: number,
+        orderId: number,
+    ): Promise<{
+        orderHistory: Order;
+    }> {
+        try {
+            // First verify the vendor exists
+            const vendor = await this.prisma.vendor.findUnique({
+                where: { user_id: authId },
+                select: { id: true },
+            });
 
-    //         if (!vendorExists) {
-    //             throw new NotFoundException('Vendor not found');
-    //         }
+            if (!vendor) {
+                throw new NotFoundException('Vendor not found');
+            }
 
-    //         const topProducts = await this.prisma.orderItem.groupBy({
-    //             by: ['product_id'],
-    //             _sum: {
-    //                 quantity: true,
-    //             },
-    //             where: {
-    //                 order: {
-    //                     vendor_orders: {
-    //                         some: {
-    //                             vendor_id: vendorId,
-    //                         },
-    //                     },
-    //                 },
-    //                 product: {
-    //                     vendor_products: {
-    //                         some: {
-    //                             vendor_id: vendorId,
-    //                         },
-    //                     },
-    //                 },
-    //             },
-    //             orderBy: {
-    //                 _sum: {
-    //                     quantity: 'desc',
-    //                 },
-    //             },
-    //             take: 5,
-    //         });
+            // Get the specific order that belongs to this vendor
+            const orderHistory = await this.prisma.order.findFirst({
+                where: {
+                    id: orderId,
+                    vendor_id: vendor.id,
+                },
+                include: {
+                    user: {
+                        select: {
+                            first_name: true,
+                            last_name: true,
+                            email: true,
+                            avatar: true
+                        }
+                    },
+                    vendor_orders: true,
+                    order_items: {
+                        include: { product: true },
+                    },
+                },
+            });
 
-    //         if (!topProducts.length) {
-    //             return {
-    //                 message: 'No recent orders found for this vendor',
-    //                 recentOrder: [],
-    //             };
-    //         }
+            if (!orderHistory) {
+                throw new NotFoundException('Order not found or does not belong to this vendor');
+            }
 
-    //         const productIds = topProducts.map((p) => p.product_id);
-
-    //         const products = await this.prisma.product.findMany({
-    //             where: {
-    //                 id: { in: productIds },
-    //             },
-    //             select: {
-    //                 id: true,
-    //                 name: true,
-    //                 price: true,
-    //             },
-    //         });
-
-    //         const recentOrder = topProducts.map((tp) => {
-    //             const product = products.find((p) => p.id === tp.product_id);
-    //             const totalOrder = tp._sum.quantity || 0;
-    //             const totalAmount = product ? product.price * totalOrder : 0;
-
-    //             return {
-    //                 product_id: tp.product_id,
-    //                 product_name: product?.name || 'Unknown',
-    //                 product_price: product?.price || 0,
-    //                 totalOrder,
-    //                 totalAmount,
-    //             };
-    //         });
-
-    //         return {
-    //             message: 'Top 5 recent vendor product orders fetched successfully',
-    //             recentOrder,
-    //         };
-    //     } catch (error) {
-    //         console.error('Error in getRecentOrder:', error);
-
-    //         if (error instanceof NotFoundException) {
-    //             throw error;
-    //         }
-
-    //         throw new InternalServerErrorException('Failed to fetch recent vendor orders');
-    //     }
-    // }
-
-    // async getNewProducts(authId: number): Promise<{
-    //     message: string;
-    //     newProducts: VendorProduct[];
-    // }> {
-    //     try {
-    //         // Get vendor ID using authId
-    //         const vendor = await this.prisma.vendor.findUnique({
-    //             where: { user_id: authId },
-    //             select: { id: true },
-    //         });
-
-    //         if (!vendor) {
-    //             throw new NotFoundException('Vendor not found');
-    //         }
-
-    //         // Get the 2 most recent vendor products
-    //         const newProducts = await this.prisma.vendorProduct.findMany({
-    //             where: {
-    //                 vendor_id: vendor.id,
-    //             },
-    //             orderBy: {
-    //                 created_at: 'desc',
-    //             },
-    //             take: 2,
-    //             include: {
-    //                 product: true, // optionally include product details
-    //             },
-    //         });
-
-    //         return {
-    //             message: 'Newest vendor products fetched successfully',
-    //             newProducts,
-    //         };
-    //     } catch (error) {
-    //         console.error('Error in getNewProducts:', error);
-
-    //         if (error instanceof NotFoundException) {
-    //             throw error;
-    //         }
-
-    //         throw new InternalServerErrorException('Failed to fetch new products');
-    //     }
-    // }
+            return {
+                orderHistory,
+            };
+        } catch (error) {
+            console.error('Error in getOrderHistory:', error);
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException('Failed to fetch order history');
+        }
+    }
 
 }

@@ -22,15 +22,15 @@ async function main() {
     // Seed roles first
     await RoleSeed.seed();
 
-    // Then seed users
-    await OrderSeed.seed();
-    await shippingMethodSeed.seed();
+    // Then seed users and dependencies
     await UserSeed.seed();
     await CategorySeed.seed();
     await BrandSeed.seed();
-
     await ProductSeeder.seed();
+    await shippingMethodSeed.seed();
 
+    // Now seed orders and related data
+    await OrderSeed.seed();
     await VendorProductSeed.seed();
     await CreditCardSeed.seed();
     await PaymentSeed.seed();
