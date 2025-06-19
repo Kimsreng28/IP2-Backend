@@ -2,7 +2,12 @@
 /dist
 /node_modules
 /build
-/prisma/migrations
+# Ignore all migration folders
+prisma/migrations/*
+
+# Allow folders ending with _prod
+!prisma/migrations/*_prod
+
 # Logs
 logs
 *.log
