@@ -15,65 +15,89 @@ export class OrderSeed {
             if (!user) throw new Error('No users exist in database');
             const vendor = await this.prisma.vendor.findFirst();
             const shippingMethod = await this.prisma.shippingMethod.findFirst();
-
+            // console.log('user...', user);
+            // console.log('vendor...', vendor);
+            // console.log('shippingMethod...', shippingMethod);
             const currentDate = new Date();
 
             await this.prisma.order.createMany({
                 data: [
                     {
                         user_id: user.id,
-                        vendor_id: vendor?.id,
-                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), // 3 days ago
+                        vendor_id: vendor.id,
+                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1), // 3 days ago
                         status: 'pending',
                         payment_status: 'unpaid',
                         total_amount: 100.50,
                         payment_method: 'credit_card',
                         shipping_address: '123 Street A',
-                        shipping_method_id: shippingMethod?.id 
+                        shipping_method_id: shippingMethod.id
                     },
                     {
                         user_id: user.id,
-                        vendor_id: vendor?.id,
-                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), // 2 days ago
+                        vendor_id: vendor.id,
+                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth()-2, 1), // 2 days ago
+                        status: 'shipped',
+                        payment_status: 'paid',
+                        total_amount: 250.00,
+                        payment_method: 'paypal',
+                        shipping_address: '456 Street B',
+                        shipping_method_id: shippingMethod.id
+                    },
+                    {
+                        user_id: user.id,
+                        vendor_id: vendor.id,
+                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth()-3, 1), // 1 day ago
+                        status: 'delivered',
+                        payment_status: 'paid',
+                        total_amount: 450.75,
+                        payment_method: 'bank_transfer',
+                        shipping_address: '789 Street C',
+                        shipping_method_id: shippingMethod.id
+                    },
+                    {
+                        user_id: user.id,
+                        vendor_id: vendor.id,
+                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth()-4, 1),
                         status: 'shipped',
                         payment_status: 'paid',
                         total_amount: 200.00,
                         payment_method: 'paypal',
                         shipping_address: '456 Street B',
-                        shipping_method_id: shippingMethod?.id 
+                        shipping_method_id: shippingMethod.id
                     },
                     {
                         user_id: user.id,
-                        vendor_id: vendor?.id,
-                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1), // 1 day ago
-                        status: 'delivered',
-                        payment_status: 'paid',
-                        total_amount: 150.75,
-                        payment_method: 'bank_transfer',
-                        shipping_address: '789 Street C',
-                        shipping_method_id: shippingMethod?.id 
-                    },
-                    {
-                        user_id: user.id,
-                        vendor_id: vendor?.id,
+                        vendor_id: vendor.id,
                         order_date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
                         status: 'shipped',
                         payment_status: 'paid',
-                        total_amount: 200.00,
+                        total_amount: 500.00,
                         payment_method: 'paypal',
                         shipping_address: '456 Street B',
-                        shipping_method_id: shippingMethod?.id
+                        shipping_method_id: shippingMethod.id
                     },
                     {
                         user_id: user.id,
-                        vendor_id: vendor?.id,
+                        vendor_id: vendor.id,
                         order_date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
+                        status: 'shipped',
+                        payment_status: 'paid',
+                        total_amount: 820.00,
+                        payment_method: 'paypal',
+                        shipping_address: '456 Street B',
+                        shipping_method_id: shippingMethod.id
+                    },
+                    {
+                        user_id: user.id,
+                        vendor_id: vendor.id,
+                        order_date: new Date(currentDate.getFullYear(), currentDate.getMonth()-1, 1),
                         status: 'delivered',
                         payment_status: 'paid',
-                        total_amount: 150.75,
+                        total_amount: 350.75,
                         payment_method: 'bank_transfer',
                         shipping_address: '789 Street C',
-                        shipping_method_id: shippingMethod?.id
+                        shipping_method_id: shippingMethod.id
                     }
                 ],
                 skipDuplicates: true,

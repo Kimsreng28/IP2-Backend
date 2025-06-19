@@ -1,6 +1,7 @@
 // ===========================================================================>> Core Library
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { PrismaClient, VendorProduct } from '@prisma/client';
+import { PrismaClient, Product, VendorProduct } from '@prisma/client';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class DashboardService {
@@ -61,24 +62,80 @@ export class DashboardService {
         }
     }
 
+    async getChartData(authId: number): Promise<{
+        message: string;
+        chartData: { month: string; totalSales: number; percent: number }[];
+    }> {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+
+        const vendor = await this.prisma.vendor.findUnique({
+            where: { user_id: authId },
+            select: { id: true },
+        });
+
+        if (!vendor) {
+            throw new NotFoundException('Vendor not found');
+        }
+
+        const orders = await this.prisma.order.findMany({
+            where: {
+                vendor_id: vendor.id,
+                payment_status: 'paid',
+                order_date: {
+                    gte: new Date(currentYear, 0, 1),
+                    lte: new Date(currentYear, 11, 31, 23, 59, 59),
+                },
+            },
+            select: {
+                order_date: true,
+                total_amount: true,
+            },
+        });
+
+        const monthlyTotals: { [key: number]: number } = {};
+
+        for (const order of orders) {
+            const month = order.order_date.getMonth(); // 0 = Jan
+            monthlyTotals[month] = (monthlyTotals[month] || 0) + order.total_amount;
+        }
+
+        const monthlySalesArray = Array.from({ length: 12 }, (_, i) => monthlyTotals[i] || 0);
+        const maxMonthlySales = Math.max(...monthlySalesArray);
+        const denominator = maxMonthlySales + 200;
+
+        const chartData = monthlySalesArray.map((totalSales, i) => ({
+            month: new Date(currentYear, i).toLocaleString('default', { month: 'long' }),
+            totalSales,
+            percent: parseFloat(((totalSales / denominator) * 100).toFixed(2)),
+        }));
+
+        return {
+            message: 'Vendor sales chart data retrieved successfully',
+            chartData,
+        };
+    }
+
+
+
     async getRecentOrder(vendorId: number): Promise<{
         message: string;
         recentOrders: any;
     }> {
         try {
-            // Validate if vendor exists
+            // 1. Validate vendor existence
             const vendorExists = await this.prisma.vendor.findUnique({
                 where: { user_id: vendorId },
                 select: { id: true },
             });
 
-            
             if (!vendorExists) {
                 throw new NotFoundException('Vendor not found');
             }
 
             vendorId = vendorExists.id;
 
+            // 2. Get top 5 products by order quantity
             const topProducts = await this.prisma.orderItem.groupBy({
                 by: ['product_id'],
                 _sum: {
@@ -115,6 +172,7 @@ export class DashboardService {
                 };
             }
 
+            // 3. Get product info + primary image
             const productIds = topProducts.map((p) => p.product_id);
 
             const products = await this.prisma.product.findMany({
@@ -125,9 +183,17 @@ export class DashboardService {
                     id: true,
                     name: true,
                     price: true,
+                    product_images: {
+                        // where: { is_primary: true },
+                        take: 1,
+                        select: {
+                            image_url: true,
+                        },
+                    },
                 },
             });
 
+            // 4. Merge product + order data
             const recentOrders = topProducts.map((tp) => {
                 const product = products.find((p) => p.id === tp.product_id);
                 const totalOrder = tp._sum.quantity || 0;
@@ -137,6 +203,7 @@ export class DashboardService {
                     product_id: tp.product_id,
                     product_name: product?.name || 'Unknown',
                     product_price: product?.price || 0,
+                    product_image: product?.product_images?.[0]?.image_url || null,
                     totalOrder,
                     totalAmount,
                 };
@@ -157,9 +224,10 @@ export class DashboardService {
         }
     }
 
+
     async getNewProducts(authId: number): Promise<{
         message: string;
-        newProducts: VendorProduct[];
+        newProducts: Array<VendorProduct & { product: Product & { primaryImage?: string } }>;
     }> {
         try {
             // Get vendor ID using authId
@@ -172,7 +240,7 @@ export class DashboardService {
                 throw new NotFoundException('Vendor not found');
             }
 
-            // Get the 2 most recent vendor products
+            // Get the 2 most recent vendor products with product details and primary image
             const newProducts = await this.prisma.vendorProduct.findMany({
                 where: {
                     vendor_id: vendor.id,
@@ -182,13 +250,34 @@ export class DashboardService {
                 },
                 take: 2,
                 include: {
-                    product: true, // optionally include product details
+                    product: {
+                        include: {
+                            product_images: {
+                                // where: {
+                                //     is_primary: true,
+                                // },
+                                select: {
+                                    image_url: true,
+                                },
+                                take: 1,
+                            },
+                        },
+                    },
                 },
             });
 
+            // Transform the data to include primary image URL
+            const productsWithImages = newProducts.map(vendorProduct => ({
+                ...vendorProduct,
+                product: {
+                    ...vendorProduct.product,
+                    // primaryImage: vendorProduct.product.product_images[0]?.image_url || null,
+                },
+            }));
+
             return {
                 message: 'Newest vendor products fetched successfully',
-                newProducts,
+                newProducts: productsWithImages,
             };
         } catch (error) {
             console.error('Error in getNewProducts:', error);

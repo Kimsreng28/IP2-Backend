@@ -34,6 +34,38 @@ export class VendorOrderSeed {
                 {
                     vendor_id: 1,
                     order_id: 3,
+                    status: "shipped",
+                    vendor_amount: 39.50,
+                    created_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
+                    updated_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7)
+                },
+                {
+                    vendor_id: 1,
+                    order_id: 4,
+                    status: "shipped",
+                    vendor_amount: 49.50,
+                    created_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
+                    updated_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7)
+                },
+                {
+                    vendor_id: 1,
+                    order_id: 5,
+                    status: "shipped",
+                    vendor_amount: 89.50,
+                    created_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
+                    updated_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7)
+                },
+                {
+                    vendor_id: 1,
+                    order_id: 6,
+                    status: "shipped",
+                    vendor_amount: 99.50,
+                    created_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
+                    updated_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 7)
+                },
+                {
+                    vendor_id: 1,
+                    order_id: 7,
                     status: "pending",
                     vendor_amount: 89.95,
                     created_at: new Date(currentDate.getFullYear(), currentDate.getMonth(), 10),

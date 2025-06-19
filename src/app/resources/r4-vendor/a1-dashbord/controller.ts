@@ -27,6 +27,16 @@ export class DashboardController {
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
+  @Get('/chartData')
+  async getChartData(@UserDecorator() auth: any): Promise<{
+    message: string;
+    chartData: { month: string; totalSales: number; percent: number }[];
+  }> {
+    return this._service.getChartData(auth.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.VENDOR)
   @Get('/newProducts')
   async getNewProducts(
     @UserDecorator() auth: any,
