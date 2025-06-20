@@ -7,14 +7,11 @@ import { OrderItemSeed } from './seed/orderItem.seed';
 import { OrderStatusHistorySeed } from './seed/orderStatusHistory.seed';
 import { PaymentSeed } from './seed/payment.seed';
 import { ProductSeeder } from './seed/product.seed';
+import { RoleSeed } from './seed/role.seeder';
 import { shippingMethodSeed } from './seed/shippingMethod.seed';
 import { UserSeed } from './seed/user.seed';
 import { VendorEventSeed } from './seed/vendorEvent.seed';
 import { VendorOrderSeed } from './seed/vendorOrder.seed';
-import { shippingMethodSeed } from './seed/shippingMethod.seed';
-import { CreditCardSeed } from './seed/creditCard.seed';
-import { PaymentSeed } from './seed/payment.seed';
-import { RoleSeed } from './seed/role.seeder';
 import { VendorProductSeed } from './seed/vendorProduct.seed';
 
 class SeederInitializer {
