@@ -32,7 +32,7 @@ import {
 
 @Controller()
 export class ShopController {
-  constructor(private readonly _service: ShopService) {}
+  constructor(private readonly _service: ShopService) { }
 
   @Get('setup')
   async getSetup() {
@@ -46,15 +46,16 @@ export class ShopController {
     return this._service.getFilteredProducts(query, userId);
   }
 
-  // @UseGuards(JwtAuthGuard) 
-  @Get('product/:product_id')
+  @Get('product/:product_id/:userId?')
   async viewProduct(
-    @Param('product_id', ParseIntPipe) productId: number, // Changed 'id' to 'product_id'
-    // @UserDecorator() user?: { userId?: number },
+    @Param('product_id', ParseIntPipe) productId: number,
+    @Param('userId') userIdParam?: string,
   ) {
     try {
-      const userId = 1
-      const product = await this._service.viewProduct(productId, userId);
+
+      const userId = Number(userIdParam);
+      const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
+      const product = await this._service.viewProduct(productId, finalUserId);
       return {
         status: HttpStatus.OK,
         data: product,
@@ -64,12 +65,15 @@ export class ShopController {
     }
   }
 
-  @Get('product/:product_id/relative')
+  @Get('product/:product_id/relative/:userId?')
   async viewRelativeProduct(
     @Param('product_id', ParseIntPipe) productId: number, // Changed 'id' to 'product_id'
-    @UserDecorator() user?: { userId?: number },
+    @Param('userId') userIdParam?: string,
   ) {
-    return this._service.viewRelativeProduct(productId, user?.userId);
+    // Convert to number and fallback to 1
+    const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
+    return this._service.viewRelativeProduct(productId, finalUserId);
   }
 
   //======================================================= Get Review
@@ -79,18 +83,21 @@ export class ShopController {
     return await this._service.getAllReviews(productId);
   }
 
-  @Post('product/:product_id/review')
+  @Post('product/:product_id/review/:userId?')
   async createReview(
     @Param('product_id') productId: number,
     @Body() body: { rating: number; comment?: string },
     @Req() req: Request,
+    @Param('userId') userIdParam?: string,
   ) {
-    const userId = req['user']?.id ?? 1; // or anonymous
+    // Convert to number and fallback to 1
+    const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
     return await this._service.createProductReview({
       product_id: productId,
       rating: body.rating,
       comment: body.comment,
-      user_id: userId,
+      user_id: finalUserId,
     });
   }
 
@@ -112,22 +119,27 @@ export class ShopController {
 
   // =========================================================================== Question
   @Get('product/:product_id/question')
-  async viewAllReviewProduct(@Param('product_id') productId: number) {
-    const userId = 1;
+  async viewAllReviewProduct(
+    @Param('product_id') productId: number,
+    @Param('userId') userIdParam?: string,
+  ) {
     return await this._service.getAllQuestions(productId);
   }
 
-  @Post('product/:product_id/question')
+  @Post('product/:product_id/question/:userId?')
   async createQuestion(
     @Param('product_id') productId: number,
     @Body() body: { question: string },
     @Req() req: Request,
+    @Param('userId') userIdParam?: string,
   ) {
-    const userId = req['user']?.id ?? 1; // or anonymous
+    // Convert to number and fallback to 1
+    const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
     return await this._service.createProductQuestion({
       product_id: productId,
       question: body.question,
-      user_id: userId,
+      user_id: finalUserId,
     });
   }
 
@@ -140,15 +152,18 @@ export class ShopController {
     return this._service.likeQuestion(productId, questionId, dto);
   }
 
-  @Post('product/:product_id/question/:questionId/comments')
+  @Post('product/:product_id/question/:questionId/comments/:userId?')
   async addComment(
     @Param('product_id', ParseIntPipe) productId: number,
     @Param('questionId', ParseIntPipe) questionId: number,
     @Body() dto: CreateQuestionCommentDto,
     @Req() req: Request,
+    @Param('userId') userIdParam?: string,
   ) {
-    const userId = req['user']?.id ?? 1; // or anonymous
-    return this._service.addComment(userId, questionId, dto);
+    // Convert to number and fallback to 1
+    const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
+    return this._service.addComment(finalUserId, questionId, dto);
   }
 
   // ======================= Wishlist =======================
