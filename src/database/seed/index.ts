@@ -29,7 +29,6 @@ async function main() {
 
     // 3. Then seed products (depends on categories and brands)
     await ProductSeeder.seed();
-    await shippingMethodSeed.seed();
 
     // 4. Then seed entities that depend on users
     await CreditCardSeed.seed(); // Needs users
