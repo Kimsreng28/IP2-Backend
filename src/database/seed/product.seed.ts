@@ -43,8 +43,10 @@ export class ProductSeeder {
       // ─────────────────────────────────────────
       const externalImageUrls = [
         // Two sample Pexels images
-        'https://images.pexels.com/photos/356056/pexels-photo-356056.jpeg?cs=srgb&dl=pexels-pixabay-356056.jpg&fm=jpg',
-        'https://images.pexels.com/photos/356057/pexels-photo-356057.jpeg?cs=srgb&dl=pexels-pixabay-356057.jpg&fm=jpg',
+        'LenovoLegion.jpg',
+        'ASUSROGZephyrus.jpg',
+        'headphone2.jpg',
+        'headphone1.jpg',
       ];
 
       // ─────────────────────────────────────────

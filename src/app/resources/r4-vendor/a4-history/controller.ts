@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Param,
   ParseIntPipe,
   Query,
   UseGuards,
@@ -18,7 +19,7 @@ import UserDecorator from 'src/app/core/decorators/user.decorator';
 
 @Controller()
 export class OrderHistoryController {
-  constructor(private readonly _service: OrderHistoryService) {}
+  constructor(private readonly _service: OrderHistoryService) { }
 
   @UseGuards(JwtAuthGuard)
   @RolesDecorator(RoleEnum.VENDOR)
@@ -27,8 +28,8 @@ export class OrderHistoryController {
     @UserDecorator() auth: any,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @Query('sortByPrice', new DefaultValuePipe('asc'))
-    sortByPrice: 'asc' | 'desc',
+    @Query('sort', new DefaultValuePipe('asc'))
+    sort: 'asc' | 'desc',
     @Query('keySearch') keySearch?: string,
   ): Promise<{
     ordersHistories: Order[];
@@ -40,28 +41,22 @@ export class OrderHistoryController {
       auth.userId,
       page,
       limit,
-      sortByPrice,
+      sort,
       keySearch,
     );
   }
 
-  // @UseGuards(JwtAuthGuard)
-  // @RolesDecorator(RoleEnum.VENDOR)
-  // @Get("/newProducts")
-  // async getNewProducts(
-  //   @UserDecorator() auth: any
-  // ): Promise<{ message: string; newProducts: VendorProduct[] }> {
-  //   return this._service.getNewProducts(auth.userId);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @RolesDecorator(RoleEnum.VENDOR)
+  @Get(':orderId')
+  async getOrderHistory(
+    @UserDecorator() auth: any,
+    @Param('orderId') orderId: number,
+  ): Promise<{
+    orderHistory: Order;
+  }> {
+    return this._service.getOrderHistory(auth.userId, orderId);
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @RolesDecorator(RoleEnum.VENDOR)
-  // @Get("/recentOrders")
-  // async getRecentOrder(
-  //   @UserDecorator() auth: any,
-  // ): Promise<{
-  //   message: string; recentOrder: any
-  // }> {
-  //   return this._service.getRecentOrder(auth.userId);
-  // }
+
 }
