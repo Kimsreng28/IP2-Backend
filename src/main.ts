@@ -21,7 +21,11 @@ class AppInitializer {
   }
 
   private configureMiddlewares() {
-    this.app.enableCors();
+    this.app.enableCors({
+      origin: '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      credentials: true,
+    });
     this.app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,

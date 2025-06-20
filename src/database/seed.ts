@@ -1,4 +1,3 @@
-
 import { PrismaClient } from '@prisma/client';
 import 'colors';
 import * as readlineSync from 'readline-sync';
@@ -7,14 +6,11 @@ import { OrderItemSeed } from './seed/orderItem.seed';
 import { OrderStatusHistorySeed } from './seed/orderStatusHistory.seed';
 import { PaymentSeed } from './seed/payment.seed';
 import { ProductSeeder } from './seed/product.seed';
+import { RoleSeed } from './seed/role.seeder';
 import { shippingMethodSeed } from './seed/shippingMethod.seed';
 import { UserSeed } from './seed/user.seed';
 import { VendorEventSeed } from './seed/vendorEvent.seed';
 import { VendorOrderSeed } from './seed/vendorOrder.seed';
-import { shippingMethodSeed } from './seed/shippingMethod.seed';
-import { CreditCardSeed } from './seed/creditCard.seed';
-import { PaymentSeed } from './seed/payment.seed';
-import { RoleSeed } from './seed/role.seeder';
 import { VendorProductSeed } from './seed/vendorProduct.seed';
 
 class SeederInitializer {
@@ -86,39 +82,54 @@ class SeederInitializer {
     await this.prisma.collection.deleteMany();
 
     // Reset auto-increment counters for all tables that were deleted
-    await this.prisma.$executeRaw`ALTER TABLE \`VendorOrder\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`OrderStatusHistory\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`OrderItem\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`VendorOrder\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`OrderStatusHistory\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`OrderItem\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Payment\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`VendorEvent\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`VendorProduct\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`VendorEvent\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`VendorProduct\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Wishlist\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Favorite\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`ProductCollection\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`ProductReview\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`ProductQuestion\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`ProductImage\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`ProductCollection\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`ProductReview\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`ProductQuestion\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`ProductImage\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Discount\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Cart\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Order\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`CreditCard\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`ShippingMethod\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`CreditCard\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`ShippingMethod\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Address\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`Notification\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`Notification\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Contact\` AUTO_INCREMENT = 1;`;
     // await this.prisma.$executeRaw`ALTER TABLE \`RefreshToken\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`PasswordChange\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`PasswordChange\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Auth\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Product\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Admin\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Vendor\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Customer\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`user_Role\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`user_Role\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`User\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Role\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Category\` AUTO_INCREMENT = 1;`;
     await this.prisma.$executeRaw`ALTER TABLE \`Brand\` AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE \`Collection\` AUTO_INCREMENT = 1;`;
+    await this.prisma
+      .$executeRaw`ALTER TABLE \`Collection\` AUTO_INCREMENT = 1;`;
 
     // Re-enable foreign key checks
     await this.prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`;
