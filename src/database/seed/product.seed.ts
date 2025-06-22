@@ -65,8 +65,8 @@ export class ProductSeeder {
         stock: 50 + i * 10,
         category_id: createdCategories[i % createdCategories.length].id,
         brand_id: createdBrands[i % createdBrands.length].id,
-        is_new_arrival: i % 2 === 0,
-        is_best_seller: i % 3 === 0,
+        is_new_arrival: i % 3 === 0,
+        is_best_seller: i % 2 === 0,
         created_at: new Date(),
         product_images: getProductImages(i),
       }));
