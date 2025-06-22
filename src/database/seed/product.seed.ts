@@ -6,7 +6,7 @@ export class ProductSeeder {
   public static async seed() {
     try {
       // ─────────────────────────────────────────
-      // 1) Ensure categories and brands exist (upsert)
+      // 1) Seed Categories and Brands
       // ─────────────────────────────────────────
       const categories = [
         { name: 'Electronics' },
@@ -39,94 +39,40 @@ export class ProductSeeder {
       );
 
       // ─────────────────────────────────────────
-      // 2) Now use full external URLs for each image
+      // 2) 13 Images (image1.png to image13.png)
       // ─────────────────────────────────────────
-      const externalImageUrls = [
-        // Two sample Pexels images
-        'LenovoLegion.jpg',
-        'ASUSROGZephyrus.jpg',
-        'headphone2.jpg',
-        'headphone1.jpg',
-      ];
+      const externalImageUrls = Array.from(
+        { length: 13 },
+        (_, i) => `image${i + 1}.png`
+      );
 
       // ─────────────────────────────────────────
-      // 3) Prepare “products” array, each with those two URLs
+      // 3) Helper to get 4 images per product (rotating)
       // ─────────────────────────────────────────
-      const products = [
-        {
-          name: 'Wireless Bluetooth Headphones',
-          description: 'Noise-cancelling wireless headphones',
-          price: 79.99,
-          stock: 50,
-          category_id: createdCategories[0].id,
-          brand_id: createdBrands[0].id,
-          is_new_arrival: true,
-          is_best_seller: false,
-          created_at: new Date(),
-          product_images: externalImageUrls.map((url) => ({
-            image_url: url,
-          })),
-        },
-        {
-          name: 'Smartwatch Pro 2',
-          description: 'Smart and lightweight',
-          price: 129.99,
-          stock: 30,
-          category_id: createdCategories[1].id,
-          brand_id: createdBrands[1].id,
-          is_new_arrival: false,
-          is_best_seller: true,
-          created_at: new Date(),
-          product_images: externalImageUrls.map((url) => ({
-            image_url: url,
-          })),
-        },
-        {
-          name: 'UltraSoft Yoga Mat',
-          description: 'Flexible and comfortable',
-          price: 39.99,
-          stock: 100,
-          category_id: createdCategories[2].id,
-          brand_id: createdBrands[2].id,
-          is_new_arrival: false,
-          is_best_seller: true,
-          created_at: new Date(),
-          product_images: externalImageUrls.map((url) => ({
-            image_url: url,
-          })),
-        },
-        {
-          name: 'Ultra Sound',
-          description: 'comfortable',
-          price: 99.99,
-          stock: 100,
-          category_id: createdCategories[2].id,
-          brand_id: createdBrands[2].id,
-          is_new_arrival: false,
-          is_best_seller: true,
-          created_at: new Date(),
-          product_images: externalImageUrls.map((url) => ({
-            image_url: url,
-          })),
-        },
-        {
-          name: 'Table Lamp',
-          description: 'Stylish and modern table lamp',
-          price: 59.99,
-          stock: 100,
-          category_id: createdCategories[2].id,
-          brand_id: createdBrands[2].id,
-          is_new_arrival: false,
-          is_best_seller: true,
-          created_at: new Date(),
-          product_images: externalImageUrls.map((url) => ({
-            image_url: url,
-          })),
-        },
-      ];
+      function getProductImages(startIndex: number): { image_url: string }[] {
+        return Array.from({ length: 4 }, (_, i) => ({
+          image_url: externalImageUrls[(startIndex + i) % externalImageUrls.length],
+        }));
+      }
 
       // ─────────────────────────────────────────
-      // 4) Create each product with its nested images
+      // 4) Generate 13 Products
+      // ─────────────────────────────────────────
+      const products = Array.from({ length: 13 }, (_, i) => ({
+        name: `Product ${i + 1}`,
+        description: `Description for Product ${i + 1}`,
+        price: 49.99 + i * 5,
+        stock: 50 + i * 10,
+        category_id: createdCategories[i % createdCategories.length].id,
+        brand_id: createdBrands[i % createdBrands.length].id,
+        is_new_arrival: i % 2 === 0,
+        is_best_seller: i % 3 === 0,
+        created_at: new Date(),
+        product_images: getProductImages(i),
+      }));
+
+      // ─────────────────────────────────────────
+      // 5) Create all products with nested images
       // ─────────────────────────────────────────
       for (const prod of products) {
         await this.prisma.product.create({
@@ -141,15 +87,13 @@ export class ProductSeeder {
             is_best_seller: prod.is_best_seller,
             created_at: prod.created_at,
             product_images: {
-              create: prod.product_images.map((img) => ({
-                image_url: img.image_url,
-              })),
+              create: prod.product_images,
             },
           },
         });
       }
 
-      console.log('✅ Products (and their external‐URL images) seeded successfully');
+      console.log('✅ 13 Products seeded successfully with rotating 4-image sets');
     } catch (error) {
       console.error('❌ Error seeding products:', error);
       throw error;
