@@ -12,7 +12,7 @@ import {
   Put,
   Query,
   Req,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import { RoleEnum } from '@prisma/client';
 import { RolesDecorator } from 'src/app/core/decorators/roles.decorator';
@@ -40,10 +40,15 @@ export class ShopController {
   }
 
   // @UseGuards(JwtAuthGuard)
-  @Get('products')
-  async getFilteredProducts(@Query() query) {
-    const userId = 1;
-    return this._service.getFilteredProducts(query, userId);
+  @Get('/:userId?/products')
+  async getFilteredProducts(
+    @Query() query: Record<string, any>,
+    @Param('userId') userIdParam?: string,
+  ) {
+    const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
+
+    return this._service.getFilteredProducts(query, finalUserId);
   }
 
   @Get('product/:product_id/:userId?')

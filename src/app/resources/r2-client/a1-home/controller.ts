@@ -1,5 +1,5 @@
 // ===========================================================================>> Custom Library
-import { Controller, Get, HttpException, HttpStatus, Param, Patch, Query, Req } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Query, Req } from '@nestjs/common';
 
 // ===========================================================================>> Custom Library
 import { HomeService } from './service';
@@ -39,14 +39,11 @@ export class HomeController {
     return await this._service.getProductBestSellers(finalUserId);
   }
 
-  @Patch('wishlists/:product_id')
-  async addWishlist(@Req() request: Request, @Param('product_id') productId: number) {
-    const userId = 1;
-    if (!userId) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-    }
-
-    return await this._service.addWishlist(userId, productId);
+  @Patch('wishlists/:product_id/:userId?')
+  async addWishlist(@Req() request: Request, @Param('product_id') productId: number,  @Param('userId') userIdParam?: string,) {
+   const userId = Number(userIdParam);
+    const finalUserId = !isNaN(userId) && userId > 0 ? userId : 1;
+    return await this._service.addWishlist(finalUserId, productId);
   }
 
 }
