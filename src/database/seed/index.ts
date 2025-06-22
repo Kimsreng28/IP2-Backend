@@ -1,8 +1,6 @@
 import { ProductSeeder } from './product.seed';
-
 import { BrandSeed } from './brand.seed';
 import { CategorySeed } from './category.seed';
-
 import { RoleSeed } from './role.seeder';
 import { UserSeed } from './user.seed';
 import { VendorProductSeed } from './vendorProduct.seed';
@@ -19,23 +17,27 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   try {
-    // Seed roles first
+    // 1. First seed fundamental entities
     await RoleSeed.seed();
-
-    // Then seed users and dependencies
-    await UserSeed.seed();
+    await shippingMethodSeed.seed();
     await CategorySeed.seed();
     await BrandSeed.seed();
-    await ProductSeeder.seed();
-    await shippingMethodSeed.seed();
 
-    // Now seed orders and related data
-    await OrderSeed.seed();
-    await VendorProductSeed.seed();
-    await CreditCardSeed.seed();
-    await PaymentSeed.seed();
-    await OrderItemSeed.seed();
-    await OrderStatusHistorySeed.seed();
+    // 2. Then seed users (depends on roles)
+    await UserSeed.seed();
+
+    // 3. Then seed products (depends on categories and brands)
+    await ProductSeeder.seed();
+
+    // 4. Then seed entities that depend on users
+    await CreditCardSeed.seed(); // Needs users
+    await OrderSeed.seed(); // Needs users
+    await VendorProductSeed.seed(); // Needs users and products
+
+    // 5. Finally seed entities that depend on orders
+    await PaymentSeed.seed(); // Needs orders and users
+    await OrderItemSeed.seed(); // Needs orders and products
+    await OrderStatusHistorySeed.seed(); // Needs orders
     await VendorEventSeed.seed();
     await VendorOrderSeed.seed();
 

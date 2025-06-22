@@ -152,12 +152,43 @@ export class UserSeed {
   }
 
   private static async clearAndReset() {
+    try {
+      // Check if tables exist before resetting
+      const tablesExist = await this.checkTablesExist();
+      
+      if (tablesExist) {
+        // Disable foreign key checks temporarily
+        await this.prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 0;`;
+        
+        // Truncate tables
+        await this.prisma.user.deleteMany();
+        await this.prisma.admin.deleteMany();
+        await this.prisma.vendor.deleteMany();
+        await this.prisma.customer.deleteMany();
+        await this.prisma.user_Role.deleteMany();
+        
+        // Reset auto-increments (MySQL syntax)
+        await this.prisma.$executeRaw`ALTER TABLE User AUTO_INCREMENT = 1;`;
+        await this.prisma.$executeRaw`ALTER TABLE Admin AUTO_INCREMENT = 1;`;
+        await this.prisma.$executeRaw`ALTER TABLE Vendor AUTO_INCREMENT = 1;`;
+        await this.prisma.$executeRaw`ALTER TABLE Customer AUTO_INCREMENT = 1;`;
+        await this.prisma.$executeRaw`ALTER TABLE User_Role AUTO_INCREMENT = 1;`;
+        
+        // Re-enable foreign key checks
+        await this.prisma.$executeRaw`SET FOREIGN_KEY_CHECKS = 1;`;
+      }
+    } catch (error) {
+      console.log('⚠️ Table reset skipped:', error.message);
+    }
+  }
 
-    // Reset auto-increments for MySQL
-    await this.prisma.$executeRaw`ALTER TABLE User AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE Admin AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE Vendor AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE Customer AUTO_INCREMENT = 1;`;
-    await this.prisma.$executeRaw`ALTER TABLE user_Role AUTO_INCREMENT = 1;`;
+  private static async checkTablesExist(): Promise<boolean> {
+    try {
+      // Check if User_Role table exists
+      await this.prisma.$queryRaw`SELECT 1 FROM User_Role LIMIT 1`;
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 }
