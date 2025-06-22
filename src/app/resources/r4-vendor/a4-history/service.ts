@@ -33,13 +33,10 @@ export class OrderHistoryService {
             }
 
             const skip = (page - 1) * limit;
-
-            // Build the where condition
             const whereCondition: Prisma.OrderWhereInput = {
                 vendor_id: vendor.id,
             };
 
-            // Add search conditions if keySearch is provided
             if (keySearch) {
                 whereCondition.OR = [
                     { shipping_address: { contains: keySearch } },
@@ -48,7 +45,7 @@ export class OrderHistoryService {
                             OR: [
                                 { first_name: { contains: keySearch } },
                                 { last_name: { contains: keySearch } },
-                                { email: { contains: keySearch, } }
+                                { email: { contains: keySearch } }
                             ]
                         }
                     }
@@ -60,9 +57,7 @@ export class OrderHistoryService {
                     where: whereCondition,
                     skip,
                     take: limit,
-                    orderBy: {
-                        id: sort,
-                    },
+                    orderBy: { id: sort },
                     include: {
                         user: {
                             select: {
@@ -74,13 +69,21 @@ export class OrderHistoryService {
                         },
                         vendor_orders: true,
                         order_items: {
-                            include: { product: true },
+                            include: {
+                                product: {
+                                    include: {
+                                        product_images: true
+                                        // {
+                                        //     where: { is_primary: true },
+                                        //     take: 1
+                                        // }
+                                    }
+                                }
+                            }
                         },
                     },
                 }),
-                this.prisma.order.count({
-                    where: whereCondition,
-                }),
+                this.prisma.order.count({ where: whereCondition }),
             ]);
 
             const totalPages = Math.ceil(totalItems / limit);
@@ -131,8 +134,18 @@ export class OrderHistoryService {
                     },
                     vendor_orders: true,
                     order_items: {
-                        include: { product: true },
-                    },
+                        include: {
+                            product: {
+                                include: {
+                                    product_images: true
+                                    // {
+                                    //     where: { is_primary: true }, 
+                                    //     take: 1                      
+                                    // }
+                                }
+                            }
+                        }
+                    }
                 },
             });
 
