@@ -10,7 +10,7 @@ import { CreateQuestionCommentDto, LikeQuestionDto } from './shop.dto';
 
 @Injectable()
 export class ShopService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getSetup() {
     const category = await this.prisma.category.findMany();
@@ -29,7 +29,7 @@ export class ShopService {
       page?: number | string;
       limit?: number | string;
     },
-    userId: number,
+    userId?: number,
   ) {
     try {
       // Parse pagination values safely
@@ -134,7 +134,7 @@ export class ShopService {
 
   async viewProduct(productId: number, userId?: number) {
     try {
-      // 1. Get product with related info
+      // 1. Get the product with related info
       const product = await this.prisma.product.findUnique({
         where: { id: productId },
         include: {
@@ -149,8 +149,23 @@ export class ShopService {
         throw new HttpException('Product not found', HttpStatus.NOT_FOUND);
       }
 
-     
-      // 4. Return enriched product
+      // 2. Add is_favorite flag if userId is provided
+      if (userId) {
+        const favorite = await this.prisma.wishlist.findFirst({
+          where: {
+            user_id: userId,
+            product_id: productId,
+          },
+          select: { id: true },
+        });
+
+        return {
+          ...product,
+          is_favorite: !!favorite,
+        };
+      }
+
+      // 3. Return product as-is if no userId
       return product;
     } catch (error) {
       console.error('Error in viewProduct:', error);
@@ -160,6 +175,7 @@ export class ShopService {
       );
     }
   }
+
 
   async viewRelativeProduct(productId: number, userId?: number) {
     try {

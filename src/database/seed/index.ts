@@ -17,6 +17,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   try {
+    console.log('')
     // 1. First seed fundamental entities
     await RoleSeed.seed();
     await shippingMethodSeed.seed();
