@@ -11,11 +11,12 @@ import { DashboardModule } from './a1-dashbord/module';
 import { ProductModule } from './a2-product/module';
 import { VendorEventModule } from './a3-event/module';
 import { OrderHistoryModule } from './a4-history/module';
+import { SettingModule } from './a5-setting/module';
 
 // ===========================================================================>> Custom Library
 
 @Module({
-  imports: [DashboardModule, ProductModule, VendorEventModule, OrderHistoryModule],
+  imports: [DashboardModule, ProductModule, VendorEventModule, OrderHistoryModule, SettingModule],
 })
 export class VendorModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
