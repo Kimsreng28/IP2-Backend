@@ -82,9 +82,8 @@ export class ShopController {
   }
 
   //======================================================= Get Review
-  @Get('product/:product_id/review')
+  @Get('product/review/:product_id/review')
   async getAllQuestionProduct(@Param('product_id') productId: number) {
-    const userId = 1;
     return await this._service.getAllReviews(productId);
   }
 
@@ -92,7 +91,6 @@ export class ShopController {
   async createReview(
     @Param('product_id') productId: number,
     @Body() body: { rating: number; comment?: string },
-    @Req() req: Request,
     @Param('userId') userIdParam?: string,
   ) {
     // Convert to number and fallback to 1
@@ -123,10 +121,9 @@ export class ShopController {
   }
 
   // =========================================================================== Question
-  @Get('product/:product_id/question')
-  async viewAllReviewProduct(
+  @Get('product/question/:product_id/question')
+  async getAllQuestions(
     @Param('product_id') productId: number,
-    @Param('userId') userIdParam?: string,
   ) {
     return await this._service.getAllQuestions(productId);
   }
