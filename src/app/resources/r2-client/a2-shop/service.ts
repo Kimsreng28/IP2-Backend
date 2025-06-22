@@ -136,7 +136,7 @@ export class ShopService {
     try {
       // 1. Get product with related info
       const product = await this.prisma.product.findUnique({
-        where: { id: 1 },
+        where: { id: productId },
         include: {
           category: true,
           brand: true,

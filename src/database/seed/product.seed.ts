@@ -28,6 +28,7 @@ export class ProductSeeder {
           })
         )
       );
+
       const createdBrands = await Promise.all(
         brands.map((brand) =>
           this.prisma.brand.upsert({
@@ -39,7 +40,7 @@ export class ProductSeeder {
       );
 
       // ─────────────────────────────────────────
-      // 2) 13 Images (image1.png to image13.png)
+      // 2) 13 image URLs (image1.png to image13.png)
       // ─────────────────────────────────────────
       const externalImageUrls = Array.from(
         { length: 13 },
@@ -47,53 +48,40 @@ export class ProductSeeder {
       );
 
       // ─────────────────────────────────────────
-      // 3) Helper to get 4 images per product (rotating)
+      // 3) Helper to get one image per product
       // ─────────────────────────────────────────
-      function getProductImages(startIndex: number): { image_url: string }[] {
-        return Array.from({ length: 4 }, (_, i) => ({
-          image_url: externalImageUrls[(startIndex + i) % externalImageUrls.length],
-        }));
+      function getProductImage(index: number): string {
+        return externalImageUrls[index];
       }
 
       // ─────────────────────────────────────────
-      // 4) Generate 13 Products
+      // 4) Create 13 products, each with one image
       // ─────────────────────────────────────────
-      const products = Array.from({ length: 13 }, (_, i) => ({
-        name: `Product ${i + 1}`,
-        description: `Description for Product ${i + 1}`,
-        price: 49.99 + i * 5,
-        stock: 50 + i * 10,
-        category_id: createdCategories[i % createdCategories.length].id,
-        brand_id: createdBrands[i % createdBrands.length].id,
-        is_new_arrival: i % 3 === 0,
-        is_best_seller: i % 2 === 0,
-        created_at: new Date(),
-        product_images: getProductImages(i),
-      }));
-
-      // ─────────────────────────────────────────
-      // 5) Create all products with nested images
-      // ─────────────────────────────────────────
-      for (const prod of products) {
-        await this.prisma.product.create({
+      for (let i = 0; i < 13; i++) {
+        const createdProduct = await this.prisma.product.create({
           data: {
-            name: prod.name,
-            description: prod.description,
-            price: prod.price,
-            stock: prod.stock,
-            category_id: prod.category_id,
-            brand_id: prod.brand_id,
-            is_new_arrival: prod.is_new_arrival,
-            is_best_seller: prod.is_best_seller,
-            created_at: prod.created_at,
-            product_images: {
-              create: prod.product_images,
-            },
+            name: `Product ${i + 1}`,
+            description: `Description for Product ${i + 1}`,
+            price: 49.99 + i * 5,
+            stock: 50 + i * 10,
+            category_id: createdCategories[i % createdCategories.length].id,
+            brand_id: createdBrands[i % createdBrands.length].id,
+            is_new_arrival: i % 3 === 0,
+            is_best_seller: i % 2 === 0,
+            created_at: new Date(),
+          },
+        });
+
+        // Create exactly one image for the product
+        await this.prisma.productImage.create({
+          data: {
+            image_url: getProductImage(i),
+            product_id: createdProduct.id,
           },
         });
       }
 
-      console.log('✅ 13 Products seeded successfully with rotating 4-image sets');
+      console.log('✅ 13 Products seeded successfully with one unique image each');
     } catch (error) {
       console.error('❌ Error seeding products:', error);
       throw error;
