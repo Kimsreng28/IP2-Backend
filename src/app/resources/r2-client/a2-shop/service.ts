@@ -281,7 +281,10 @@ export class ShopService {
     const product = await this.prisma.product.findUnique({
       where: { id: data.product_id },
     });
-    if (!product) throw new BadRequestException('Product not found');
+
+    if (!product) {
+      throw new BadRequestException('Product not found');
+    }
 
     return this.prisma.productReview.create({
       data: {
@@ -292,6 +295,7 @@ export class ShopService {
       },
     });
   }
+
 
   async toggleLike(reviewId: number, like: boolean = true) {
     const review = await this.prisma.productReview.findUnique({
@@ -331,16 +335,31 @@ export class ShopService {
     return this.prisma.productQuestion.findMany({
       where: { product_id: productId },
       include: {
-        user: true, // Include the user who asked the question
+        user: {
+          select: {
+            id: true,
+            last_name: true,
+            first_name: true,
+            email: true,
+          },
+        },
         comments: {
           include: {
-            user: true, // Include the user who wrote the comment
+            user: {
+              select: {
+                id: true,
+                last_name: true,
+                first_name: true,
+                email: true,
+              },
+            },
           },
         },
       },
       orderBy: { created_at: 'desc' },
     });
   }
+
 
   // Create product question
   async createProductQuestion(data: {
